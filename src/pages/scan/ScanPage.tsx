@@ -1,9 +1,13 @@
+import { useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { historyIdx, useGo } from '../../lib/nav';
 import { Icon, TabBar } from '../../components/ui';
+import { USE_MOCK } from '../../api/client';
+import { setPendingPhoto } from '../../data/scanned';
 
 export function ScanPage() {
   const nav = useNavigate();
+  const fileRef = useRef<HTMLInputElement>(null);
   const go = useGo();
   const corner = (pos: React.CSSProperties, sides: string) => (
     <span style={{ position: 'absolute', width: 44, height: 44, ...pos, borderStyle: 'solid', borderColor: 'var(--mint)', borderWidth: 0, ...Object.fromEntries(sides.split(' ').map((s) => [`border${s}Width`, 4])) }} />
@@ -23,7 +27,8 @@ export function ScanPage() {
           <span style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 10, color: '#9AA3B5' }}>
             <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.6} strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M3 5.5C5.5 4.5 8.5 4.5 12 6.5c3.5-2 6.5-2 9-1V19c-2.5-1-5.5-1-9 1-3.5-2-6.5-2-9-1V5.5z" /><path d="M12 6.5V20" /></svg>
             <span style={{ fontSize: 14 }}>카메라 화면</span></span>
-          <input className="sr-only" type="file" accept="image/*" capture="environment" onChange={() => nav('/scan/analyzing')} />
+          <input ref={fileRef} className="sr-only" type="file" accept="image/jpeg,image/png,image/webp" capture="environment"
+            onChange={(e) => { const f = e.target.files?.[0]; if (!f) return; setPendingPhoto(f); nav('/scan/analyzing'); }} />
         </label>
         <div style={{ display: 'flex', gap: 10, alignItems: 'center', background: '#232838', borderRadius: 16, padding: '12px 14px', fontSize: 14, lineHeight: 1.5, color: '#E6EAF2' }}>
           <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#F7C948" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" aria-hidden="true" style={{ flex: 'none' }}><path d="M9 18h6" /><path d="M10 21h4" /><path d="M12 3a6 6 0 00-3.5 10.9c.6.5 1 1.2 1 2.1h5c0-.9.4-1.6 1-2.1A6 6 0 0012 3z" /></svg>
@@ -31,7 +36,7 @@ export function ScanPage() {
         </div>
       </div>
       <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 12, padding: '22px 20px 26px' }}>
-        <button aria-label="촬영" onClick={() => nav('/scan/analyzing')} style={{ width: 78, height: 78, borderRadius: '50%', border: '4px solid #fff', background: 'transparent', padding: 0, display: 'grid', placeItems: 'center', cursor: 'pointer' }}>
+        <button aria-label="촬영" onClick={() => (USE_MOCK ? nav('/scan/analyzing') : fileRef.current?.click())} style={{ width: 78, height: 78, borderRadius: '50%', border: '4px solid #fff', background: 'transparent', padding: 0, display: 'grid', placeItems: 'center', cursor: 'pointer' }}>
           <span style={{ width: 62, height: 62, borderRadius: '50%', background: '#fff' }} />
         </button>
         <span style={{ fontSize: 13, color: '#B7BFCD' }}>사진은 저장되지 않고 글자를 읽은 뒤 바로 삭제돼요</span>

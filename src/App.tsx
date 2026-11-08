@@ -25,7 +25,8 @@ export default function App() {
   return (
     <div className="app">
       <Routes>
-        <Route path="/" element={<Navigate to="/onboarding" replace />} />
+        {/* 기본 정보를 이미 입력했으면 홈, 처음이면 기본 정보 입력 */}
+        <Route path="/" element={<Navigate to={profile.onboarded ? '/home' : '/onboarding'} replace />} />
         <Route path="/onboarding" element={<OnboardingPage profile={profile} onSave={setProfile} />} />
         <Route path="/onboarding/privacy" element={<PrivacyNoticePage />} />
         <Route path="/home" element={<HomePage profile={profile} />} />
@@ -33,7 +34,7 @@ export default function App() {
         <Route path="/books" element={<BookListPage />} />
         <Route path="/books/:bookId" element={<WordListPage />} />
         <Route path="/scan" element={<ScanPage />} />
-        <Route path="/scan/analyzing" element={<ScanAnalyzingPage />} />
+        <Route path="/scan/analyzing" element={<ScanAnalyzingPage profile={profile} onSave={setProfile} />} />
         <Route path="/words/:wordId" element={<WordDetailPage />} />
         <Route path="/words/:wordId/practice" element={<PracticeWritePage />} />
         <Route path="/words/:wordId/practice/reviewing" element={<PracticeReviewingPage profile={profile} />} />
