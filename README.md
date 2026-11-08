@@ -11,7 +11,8 @@ npm run build      # dist/ 생성
 
 ## 구성
 - `src/pages/` 화면. 화면 ID와 경로 대응은 `src/App.tsx` 맨 위 주석 참고
-  - `Start.tsx` A-1 시작 · A-2 기본 정보 입력 · A-3 시작하기 전에
+  - `Start.tsx` A-2 기본 정보 입력 · A-3 시작하기 전에 (첫 진입 `/`은 프로필 유무에 따라 A-2 또는 B-1)
+  - `lib/nav.tsx` 버튼·뒤로가기 규칙 (화면 속 뒤로 버튼 = 브라우저 뒤로가기)
   - `Home.tsx` B-1 홈 · H-1 내 정보
   - `Books.tsx` C-1 동화책 고르기 · C-2 촬영 · C-3 표현 찾는 중 · C-4 단어 카드 목록(책 4권)
   - `WordDetail.tsx` D-1 단어 카드 상세
