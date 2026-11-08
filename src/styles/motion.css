@@ -1,0 +1,40 @@
+/* ── 단어 움직임 효과 ──
+   AnimWord 컴포넌트가 단어를 글자 단위 span으로 나누고 .mw-<motion> 클래스를 붙인다.
+   .loop  : 계속 움직임 (단어 상세 위쪽)
+   .hover : 감싼 링크/버튼에 마우스를 올리거나 누를 때만 움직임 (단어 카드 목록, 최근 단어) */
+.mw { display: inline-block; white-space: nowrap; position: relative; }
+.mw > span { display: inline-block; }
+
+.mw-beat.loop, :is(a, button):is(:hover, :active, :focus-visible) .mw-beat.hover { animation: mwBeat 1.15s ease-in-out infinite; }
+.mw-twinkle.loop > span, :is(a, button):is(:hover, :active, :focus-visible) .mw-twinkle.hover > span { animation: mwTw 1.7s ease-in-out infinite; }
+.mw-drop.loop > span, :is(a, button):is(:hover, :active, :focus-visible) .mw-drop.hover > span { animation: mwDrop 2.4s cubic-bezier(.5, 0, .5, 1) infinite; }
+.mw-sob.loop > span, :is(a, button):is(:hover, :active, :focus-visible) .mw-sob.hover > span { animation: mwSob 1.4s ease-in-out infinite; }
+.mw-hop.loop > span, :is(a, button):is(:hover, :active, :focus-visible) .mw-hop.hover > span { animation: mwHop 1.3s ease-in-out infinite; }
+.mw-tiptoe.loop > span, :is(a, button):is(:hover, :active, :focus-visible) .mw-tiptoe.hover > span { animation: mwTip 2.6s ease-in-out infinite; }
+.mw-roll.loop > span, :is(a, button):is(:hover, :active, :focus-visible) .mw-roll.hover > span { animation: mwRoll 2.8s cubic-bezier(.3, .7, .4, 1) infinite; }
+.mw-splash.loop > span, :is(a, button):is(:hover, :active, :focus-visible) .mw-splash.hover > span { animation: mwSplash .95s ease-in-out infinite; }
+.mw-crawl.loop, :is(a, button):is(:hover, :active, :focus-visible) .mw-crawl.hover { animation: mwCrawl 4.5s ease-in-out infinite alternate; }
+.mw-nod.loop > span, :is(a, button):is(:hover, :active, :focus-visible) .mw-nod.hover > span { transform-origin: 50% 90%; animation: mwNod 3s ease-in-out infinite; }
+.mw-wave.loop > span, :is(a, button):is(:hover, :active, :focus-visible) .mw-wave.hover > span { animation: mwWave 1.6s ease-in-out infinite; }
+.mw-gulp.loop > span, :is(a, button):is(:hover, :active, :focus-visible) .mw-gulp.hover > span { animation: mwGulp 1.8s ease-in-out infinite; }
+.mw-struggle.loop > span, :is(a, button):is(:hover, :active, :focus-visible) .mw-struggle.hover > span { animation: mwStruggle .5s ease-in-out infinite; }
+.mw-heave.loop, :is(a, button):is(:hover, :active, :focus-visible) .mw-heave.hover { animation: mwHeave 1.4s ease-in-out infinite; }
+
+@keyframes mwBeat { 0%, 45%, 100% { transform: scale(1); } 12% { transform: scale(1.13); } 24% { transform: scale(1.03); } 33% { transform: scale(1.15); } }
+@keyframes mwTw { 0%, 100% { opacity: 1; text-shadow: 0 0 .25em #f7c948; } 50% { opacity: .35; text-shadow: none; } }
+@keyframes mwDrop { 0% { transform: translateY(-1em); opacity: 0; } 35% { transform: translateY(0); opacity: 1; } 45% { transform: translateY(.1em); } 55%, 100% { transform: translateY(0); } }
+@keyframes mwSob { 0%, 100% { transform: translateY(0); } 15% { transform: translateY(.08em) scaleY(.92); } 30% { transform: translateY(-.04em); } 45% { transform: translateY(.06em) scaleY(.95); } 60% { transform: translateY(0); } }
+@keyframes mwHop { 0%, 55%, 100% { transform: translateY(0); } 20% { transform: translateY(-.42em); } 40% { transform: translateY(.03em); } }
+@keyframes mwTip { 0%, 100% { transform: translateX(-.12em); opacity: .3; } 50% { transform: translateX(.12em) translateY(-.05em); opacity: 1; } }
+@keyframes mwRoll { 0% { transform: translateX(-.9em) rotate(-360deg); opacity: 0; } 35% { opacity: 1; } 55%, 100% { transform: none; opacity: 1; } }
+@keyframes mwSplash { 0%, 100% { transform: translateY(0) rotate(0); } 25% { transform: translateY(-.22em) rotate(-9deg); } 70% { transform: translateY(.06em) rotate(8deg); } }
+@keyframes mwCrawl { from { transform: translateX(-.5em); } to { transform: translateX(.5em); } }
+@keyframes mwNod { 0%, 55%, 100% { transform: rotate(0); } 66% { transform: rotate(16deg) translateY(.06em); } 74% { transform: rotate(3deg); } 84% { transform: rotate(14deg) translateY(.05em); } 92% { transform: rotate(0); } }
+@keyframes mwWave { 0%, 100% { transform: translateY(-.12em); } 50% { transform: translateY(.12em); } }
+@keyframes mwGulp { 0%, 50%, 100% { transform: none; } 62% { transform: scale(1.12, .82) translateY(.08em); } 78% { transform: translateY(.14em); } }
+@keyframes mwStruggle { 0%, 100% { transform: translateX(0) rotate(0); } 25% { transform: translateX(-.05em) rotate(-4deg); } 75% { transform: translateX(.05em) rotate(4deg); } }
+@keyframes mwHeave { 0%, 60%, 100% { transform: translateY(0) scale(1); } 30% { transform: translateY(-.18em) scale(1.06); } }
+
+@media (prefers-reduced-motion: reduce) {
+  .mw, .mw > span { animation: none !important; opacity: 1 !important; }
+}

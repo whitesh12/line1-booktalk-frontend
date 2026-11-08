@@ -1,0 +1,26 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 260 200"><ellipse cx="130" cy="178" rx="96" ry="16" fill="#F7E7B0"/>
+<rect x="30" y="40" width="7" height="3.5" rx="1.5" transform="rotate(30 30 40)" fill="#F6B73C"/><rect x="60" y="22" width="7" height="3.5" rx="1.5" transform="rotate(-20 60 22)" fill="#EE8264"/><rect x="205" y="28" width="7" height="3.5" rx="1.5" transform="rotate(25 205 28)" fill="#5EC2B2"/><rect x="232" y="56" width="7" height="3.5" rx="1.5" transform="rotate(-35 232 56)" fill="#F6B73C"/><rect x="22" y="92" width="7" height="3.5" rx="1.5" transform="rotate(-15 22 92)" fill="#5EC2B2"/><rect x="238" y="104" width="7" height="3.5" rx="1.5" transform="rotate(20 238 104)" fill="#EE8264"/><rect x="120" y="14" width="7" height="3.5" rx="1.5" transform="rotate(10 120 14)" fill="#5EC2B2"/><rect x="176" y="12" width="7" height="3.5" rx="1.5" transform="rotate(-30 176 12)" fill="#EE8264"/>
+<path d="M36 55C37.98 62.02 37.98 62.02 45 64C37.98 65.98 37.98 65.98 36 73C34.02 65.98 34.02 65.98 27 64C34.02 62.02 34.02 62.02 36 55Z" fill="#F6A623"/><path d="M226 72C227.76 78.24 227.76 78.24 234 80C227.76 81.76 227.76 81.76 226 88C224.24 81.76 224.24 81.76 218 80C224.24 78.24 224.24 78.24 226 72Z" fill="#2FB9A8"/><circle cx="214" cy="40" r="4" fill="#F6B860"/>
+<!-- speech bubbles -->
+<path d="M60 22h56a14 14 0 0 1 14 14v18a14 14 0 0 1-14 14h-30l-12 11l2-11h-16a14 14 0 0 1-14-14v-18a14 14 0 0 1 14-14z" fill="#FFFFFF" stroke="#BFE8E0" stroke-width="2"/>
+<circle cx="72" cy="45" r="4" fill="#2FB9A8"/><circle cx="88" cy="45" r="4" fill="#2FB9A8"/><circle cx="104" cy="45" r="4" fill="#2FB9A8"/>
+<path d="M150 34h44a14 14 0 0 1 14 14v14a14 14 0 0 1-14 14h-10l2 11l-13-11h-23a14 14 0 0 1-14-14v-14a14 14 0 0 1 14-14z" fill="#FFFFFF" stroke="#FCD9A8" stroke-width="2"/>
+<path transform="translate(160 41) scale(1.1)" d="M12 20.5s-7.5-4.6-7.5-10.2C4.5 7.4 6.6 5.5 9 5.5c1.4 0 2.4.7 3 1.6.6-.9 1.6-1.6 3-1.6 2.4 0 4.5 1.9 4.5 4.8 0 5.6-7.5 10.2-7.5 10.2z" fill="#EE8264"/>
+<!-- parent -->
+<path d="M62 176C62 140 78 120 100 120C122 120 136 140 136 176Z" fill="#2FB9A8"/>
+<circle cx="100" cy="98" r="24" fill="#F9CFAE"/>
+<path d="M76 99C75 81 86 72 100 72C115 72 125 81 124 96C118 89 109 86 99 88C90 90 82 94 76 99Z" fill="#3A2F47"/>
+<circle cx="92" cy="101" r="2.4" fill="#3A2F47"/><circle cx="108" cy="101" r="2.4" fill="#3A2F47"/>
+<path d="M94 110q6 5 12 0" stroke="#3A2F47" stroke-width="2.2" fill="none" stroke-linecap="round"/>
+<circle cx="86" cy="108" r="3.5" fill="#F7A9A0" opacity=".7"/><circle cx="114" cy="108" r="3.5" fill="#F7A9A0" opacity=".7"/>
+<!-- child -->
+<path d="M132 178C132 152 143 138 160 138C177 138 188 152 188 178Z" fill="#FFBA63"/>
+<circle cx="160" cy="118" r="19" fill="#FCE1CA"/>
+<path d="M141 119C140 105 149 98 160 98C172 98 179 105 178 117C173 111 165 109 157 110C150 111 145 114 141 119Z" fill="#4B3528"/>
+<circle cx="154" cy="121" r="2" fill="#3A2F47"/><circle cx="166" cy="121" r="2" fill="#3A2F47"/>
+<path d="M155 128q5 5 10 0" stroke="#3A2F47" stroke-width="2" fill="none" stroke-linecap="round"/>
+<circle cx="149" cy="127" r="3" fill="#F7A9A0" opacity=".7"/><circle cx="171" cy="127" r="3" fill="#F7A9A0" opacity=".7"/>
+<!-- high five hands -->
+<circle cx="132" cy="138" r="7" fill="#F9CFAE"/><circle cx="140" cy="140" r="6" fill="#FCE1CA"/>
+<!-- closed book -->
+<path d="M126 166C116 160 100 159 88 162V180C100 177 116 178 126 184C136 178 152 177 164 180V162C152 159 136 160 126 166Z" fill="#FFFFFF" stroke="#2E2A45" stroke-width="3" stroke-linejoin="round"/><path d="M126 166V184" stroke="#2FB9A8" stroke-width="2.5"/></svg>
