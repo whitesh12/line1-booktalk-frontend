@@ -68,8 +68,8 @@ export function mockSentenceFeedback(word: Word, sentence: string): SentenceFeed
   if (word.id === 'dugeun' && /울|눈물/.test(s)) {
     return {
       kind: 'meaning', original: s, wrongPart: word.text,
-      goodPoint: '아이가 겪은 상황을 아주 잘 설명했어요.',
-      tips: ['크게 소리 내어 우는 모양을 나타내는 말은 무엇일까요? 그림책에서 함께 배웠어요.',
+      goodPoint: '아이가 넘어져서 운 상황을 아주 잘 설명했어요.',
+      tips: ['크게 소리 내어 우는 모양을 나타내는 말은 무엇일까요? 이 그림책에서 함께 배웠어요.',
         '아니면 ‘두근두근’이 어울리는 순간으로 다시 써 봐도 좋아요. 선물을 열기 전처럼요.'],
     };
   }

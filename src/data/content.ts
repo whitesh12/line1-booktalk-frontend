@@ -201,8 +201,9 @@ export const WORDS: Record<string, Word> = {
 export interface Book {
   id: string;
   title: string;
-  page: string;
+  page: string; // 표지 옆 쪽수 표시 (C-4 디자인은 토끼의 당근 밭만 '· 4쪽'을 보여 줌, 빈 값이면 생략)
   cover: string;
+  coverBg: string; // 표지 그림 뒤 바탕색 (C-1)
   coverAlt: string;
   wordIds: string[];
   scenes: Record<string, string>; // 단어 → 책 속 문장
@@ -210,24 +211,24 @@ export interface Book {
 
 export const BOOKS: Book[] = [
   {
-    id: 'rabbit', title: '토끼의 당근 밭', page: '4쪽', cover: '/images/books/rabbit-carrot.svg',
+    id: 'rabbit', title: '토끼의 당근 밭', page: '4쪽', cover: '/images/books/rabbit-carrot.svg', coverBg: '#5EC2B2',
     coverAlt: '토끼가 당근 밭에서 당근을 들고 있는 그림',
     wordIds: ['dugeun', 'pongdang', 'eongeong', 'banjjak', 'nuni'],
     scenes: { dugeun: '토끼는 당근을 보고 가슴이 두근두근했어요.' },
   },
   {
-    id: 'bear', title: '곰곰이의 비 오는 날', page: '2쪽', cover: '/images/books/bear-rain.svg',
-    coverAlt: '노란 우비를 입은 곰이 웅덩이에 서 있는 그림',
+    id: 'bear', title: '곰곰이의 비 오는 날', page: '', cover: '/images/books/bear-rain.svg', coverBg: '#9CC9EC',
+    coverAlt: '노란 우비를 입은 곰이 비 오는 날 웅덩이에 서 있는 그림',
     wordIds: ['cheombeong', 'pongdang', 'eonggeum', 'kkubeok'], scenes: {},
   },
   {
-    id: 'toto', title: '토토의 밤 소풍', page: '3쪽', cover: '/images/books/toto-night.svg',
+    id: 'toto', title: '토토의 밤 소풍', page: '', cover: '/images/books/toto-night.svg', coverBg: '#2B3A67',
     coverAlt: '달밤 언덕에서 토끼가 소풍을 즐기는 그림',
     wordIds: ['dugeun', 'kkang', 'salgeum', 'degul', 'banjjak'], scenes: {},
   },
   {
-    id: 'sunmoon', title: '해와 달이 된 오누이', page: '5쪽', cover: '/images/books/sun-moon.svg',
-    coverAlt: '오누이가 동아줄을 타고 해와 달이 있는 하늘로 오르는 그림',
+    id: 'sunmoon', title: '해와 달이 된 오누이', page: '', cover: '/images/books/sun-moon.svg', coverBg: '#F2B66B',
+    coverAlt: '오누이가 동아줄을 타고 해와 달이 있는 하늘로 올라가는 그림',
     wordIds: ['gubul', 'ggulkkeok', 'salgeum', 'eongeongOnui', 'adeung', 'yeongcha'], scenes: {},
   },
 ];

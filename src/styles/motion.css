@@ -8,6 +8,7 @@
 .mw-beat.loop, :is(a, button):is(:hover, :active, :focus-visible) .mw-beat.hover { animation: mwBeat 1.15s ease-in-out infinite; }
 .mw-twinkle.loop > span, :is(a, button):is(:hover, :active, :focus-visible) .mw-twinkle.hover > span { animation: mwTw 1.7s ease-in-out infinite; }
 .mw-drop.loop > span, :is(a, button):is(:hover, :active, :focus-visible) .mw-drop.hover > span { animation: mwDrop 2.4s cubic-bezier(.5, 0, .5, 1) infinite; }
+.mw-drop.loop::after, :is(a, button):is(:hover, :active, :focus-visible) .mw-drop.hover::after { content: ""; position: absolute; left: 50%; bottom: -.08em; width: 1.6em; height: .35em; margin-left: -.8em; border: 2px solid #E8735A; border-radius: 50%; opacity: 0; animation: mwRip 2.4s ease-out infinite; }
 .mw-sob.loop > span, :is(a, button):is(:hover, :active, :focus-visible) .mw-sob.hover > span { animation: mwSob 1.4s ease-in-out infinite; }
 .mw-hop.loop > span, :is(a, button):is(:hover, :active, :focus-visible) .mw-hop.hover > span { animation: mwHop 1.3s ease-in-out infinite; }
 .mw-tiptoe.loop > span, :is(a, button):is(:hover, :active, :focus-visible) .mw-tiptoe.hover > span { animation: mwTip 2.6s ease-in-out infinite; }
@@ -21,8 +22,9 @@
 .mw-heave.loop, :is(a, button):is(:hover, :active, :focus-visible) .mw-heave.hover { animation: mwHeave 1.4s ease-in-out infinite; }
 
 @keyframes mwBeat { 0%, 45%, 100% { transform: scale(1); } 12% { transform: scale(1.13); } 24% { transform: scale(1.03); } 33% { transform: scale(1.15); } }
-@keyframes mwTw { 0%, 100% { opacity: 1; text-shadow: 0 0 .25em #f7c948; } 50% { opacity: .35; text-shadow: none; } }
+@keyframes mwTw { 0%, 100% { opacity: 1; text-shadow: 0 0 .25em #F7C948; } 50% { opacity: .35; text-shadow: none; } }
 @keyframes mwDrop { 0% { transform: translateY(-1em); opacity: 0; } 35% { transform: translateY(0); opacity: 1; } 45% { transform: translateY(.1em); } 55%, 100% { transform: translateY(0); } }
+@keyframes mwRip { 0%, 38% { transform: scale(.3); opacity: 0; } 45% { opacity: .9; } 80%, 100% { transform: scale(1.5); opacity: 0; } }
 @keyframes mwSob { 0%, 100% { transform: translateY(0); } 15% { transform: translateY(.08em) scaleY(.92); } 30% { transform: translateY(-.04em); } 45% { transform: translateY(.06em) scaleY(.95); } 60% { transform: translateY(0); } }
 @keyframes mwHop { 0%, 55%, 100% { transform: translateY(0); } 20% { transform: translateY(-.42em); } 40% { transform: translateY(.03em); } }
 @keyframes mwTip { 0%, 100% { transform: translateX(-.12em); opacity: .3; } 50% { transform: translateX(.12em) translateY(-.05em); opacity: 1; } }
@@ -36,5 +38,5 @@
 @keyframes mwHeave { 0%, 60%, 100% { transform: translateY(0) scale(1); } 30% { transform: translateY(-.18em) scale(1.06); } }
 
 @media (prefers-reduced-motion: reduce) {
-  .mw, .mw > span { animation: none !important; opacity: 1 !important; }
+  .mw, .mw > span, .mw::after { animation: none !important; opacity: 1 !important; }
 }

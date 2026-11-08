@@ -18,7 +18,7 @@ export function TalkPrep({ profile }: { profile: Profile }) {
   return (
     <div className="screen">
       <Header title="아이와 대화 연습" />
-      <div className="content" style={{ gap: 16 }}>
+      <div className="content" style={{ gap: 16, paddingBottom: 16 }}>
         <div className="card" style={{ display: 'flex', alignItems: 'center', gap: 16, borderRadius: 24, padding: 20 }}>
           <span className="avatar" style={{ width: 84, height: 84, fontSize: 34 }} aria-hidden="true">{profile.childName.slice(0, 1)}</span>
           <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
@@ -27,9 +27,9 @@ export function TalkPrep({ profile }: { profile: Profile }) {
             <span style={{ fontSize: 14, color: 'var(--text-sub)' }}>{profile.childAge}세 · {book.title}</span>
           </div>
         </div>
-        <h2 style={{ margin: '6px 0 0', fontSize: 17 }}>오늘의 목표</h2>
+        <h2 style={{ margin: '6px 0 0', fontSize: 17, fontWeight: 700 }}>오늘의 목표</h2>
         <div style={{ background: '#fff', border: '2px dashed var(--mint)', borderRadius: 22, padding: '22px 20px', display: 'flex', flexDirection: 'column', gap: 12 }}>
-          <span className="chip chip-primary" style={{ alignSelf: 'flex-start', fontSize: 17, fontWeight: 800, padding: '5px 14px' }}>{w.text}</span>
+          <span className="chip chip-primary" style={{ alignSelf: 'flex-start', fontSize: 17, fontWeight: 800, letterSpacing: '-0.02em', padding: '5px 14px' }}>{w.text}</span>
           <p style={{ margin: 0, fontSize: 18, fontWeight: 700, lineHeight: 1.5 }}>을(를) 넣어 아이에게 질문해 보기</p>
         </div>
       </div>
@@ -71,32 +71,35 @@ export function TalkChat({ profile }: { profile: Profile }) {
   }
 
   const showHint = msgs.length === 1;
+  const retry = msgs.some((m) => m.from === 'feedback');
   return (
     <div className="screen" style={{ height: '100dvh' }}>
-      <Header title={`‘${w.text}’ 대화 연습`} white />
-      <div className="chat" aria-live="polite">
+      <Header title={`‘${w.text}’ 대화 연습`} white to={`/talk/${w.id}${qs}`} />
+      <div className={`chat${done ? ' done' : ''}`} aria-live="polite">
         {msgs.map((m, i) =>
           m.from === 'kid' ? (
             <KidMessage key={i} name={profile.childName}><p className="bubble-kid">{m.text}</p></KidMessage>
           ) : m.from === 'me' ? (
             <p key={i} className="bubble-me">{m.text.split(stem).map((p, j, arr) => <span key={j}>{p}{j < arr.length - 1 && <b>{stem}</b>}</span>)}</p>
           ) : (
-            <div key={i} style={{ display: 'flex', flexDirection: 'column', gap: 10, marginTop: 6 }}>
-              <div className="banner" style={{ fontSize: 14 }}><span className="dot" style={{ width: 30, height: 30 }}>{Icon.check(16)}</span>의미는 잘 전달됐어요! 표현 하나만 다듬어 볼까요?</div>
-              <div className="hint"><b style={{ fontSize: 15 }}>이 부분만 살짝</b>{m.tips.map((t) => <p key={t} style={{ fontSize: 14 }}>{t}</p>)}</div>
+            <div key={i} style={{ display: 'flex', flexDirection: 'column', gap: 12, marginTop: 6 }}>
+              <div className="banner" style={{ gap: 10, borderRadius: 16, padding: '12px 14px', fontSize: 14 }}><span className="dot" style={{ width: 30, height: 30 }}>{Icon.check(16)}</span>의미는 잘 전달됐어요! 표현 하나만 다듬어 볼까요?</div>
+              <div className="hint" style={{ borderRadius: 18, padding: '14px 16px' }}><b style={{ fontSize: 15 }}>이 부분만 살짝</b>{m.tips.map((t) => <p key={t} style={{ fontSize: 14, lineHeight: 1.55 }}>{t}</p>)}</div>
             </div>
           ),
         )}
-        {waiting && <KidMessage name={profile.childName}><span className="typing" aria-label="답을 기다리는 중"><i /><i /><i /></span></KidMessage>}
+        {waiting && <KidMessage name={profile.childName}><span className="typing" style={{ alignSelf: 'flex-start' }} aria-label="답을 기다리는 중"><i /><i /><i /></span></KidMessage>}
         {showHint && (
-          <div className="hint" style={{ marginTop: 6, flexDirection: 'row', gap: 10 }}>
-            <span style={{ flex: 'none' }}>{Icon.bulb()}</span>
-            <div><b style={{ fontSize: 15 }}>도움말</b><p style={{ fontSize: 14 }}>책 장면과 연결해 쉬운 말로 뜻을 설명해 보세요.</p></div>
+          <div className="hint" style={{ marginTop: 6, flexDirection: 'row', alignItems: 'flex-start', gap: 10, borderRadius: 18, padding: '14px 16px' }}>
+            <span style={{ flex: 'none', display: 'flex', marginTop: 2 }}>{Icon.bulb()}</span>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 2 }}><b style={{ fontSize: 15 }}>도움말</b><p style={{ fontSize: 14, lineHeight: 1.5 }}>책 장면과 연결해 쉬운 말로 뜻을 설명해 보세요.</p></div>
           </div>
         )}
         {done && (
-          <button onClick={() => nav(`/talk/${w.id}/done${qs}`)} style={{ marginTop: 8, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 8, background: 'none', border: 0, cursor: 'pointer' }}>
-            <b style={{ fontSize: 15 }}>대화를 모두 마쳤어요</b>
+          <button onClick={() => nav(`/talk/${w.id}/done${qs}`)} aria-label="대화를 모두 마쳤어요. 누르면 마무리 화면" style={{ marginTop: 8, width: '100%', padding: 0, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 8, background: 'none', border: 0, color: 'var(--text)', cursor: 'pointer' }}>
+            <span style={{ display: 'flex', alignItems: 'center', gap: 10, width: '100%' }}>
+              <span style={{ flex: 1, height: 1, background: 'var(--border)' }} /><b style={{ fontSize: 15 }}>대화를 모두 마쳤어요</b><span style={{ flex: 1, height: 1, background: 'var(--border)' }} />
+            </span>
             <span style={{ width: 48, height: 48, borderRadius: '50%', background: 'var(--mint)', display: 'grid', placeItems: 'center' }}>{Icon.check(26)}</span>
           </button>
         )}
@@ -104,9 +107,9 @@ export function TalkChat({ profile }: { profile: Profile }) {
       </div>
       {!done && (
         <form className="composer" onSubmit={(e) => { e.preventDefault(); send(); }}>
-          <input aria-label="답변 입력" placeholder={waiting ? '답을 기다리는 중...' : msgs.some((m) => m.from === 'feedback') ? '다시 답해 보세요' : '여기에 답해 보세요'}
+          <input aria-label={retry ? '답변 다시 입력' : '답변 입력'} placeholder={waiting ? '답을 기다리는 중...' : retry ? '다시 답해 보세요' : '여기에 답해 보세요'}
             value={text} disabled={waiting} onChange={(e) => setText(e.target.value)} />
-          <button type="button" className="round mic" aria-label="음성 입력">{Icon.mic()}</button>
+          {!waiting && !retry && <button type="button" className="round mic" aria-label="음성 입력">{Icon.mic()}</button>}
           <button type="submit" className="round send" aria-label="보내기" disabled={waiting || !text.trim()}>{Icon.arrow()}</button>
         </form>
       )}
@@ -120,9 +123,9 @@ export function TalkDone({ profile }: { profile: Profile }) {
   return (
     <div className="screen">
       <Header title="대화 마무리" back={false} center />
-      <div className="content center" style={{ gap: 22, paddingBottom: 60 }}>
+      <div className="content center" style={{ gap: 22, padding: '0 24px 60px' }}>
         <div style={{ width: 300, height: 230, borderRadius: 32, background: 'var(--mint-soft)', overflow: 'hidden' }}>
-          <img src="/images/celebrate.svg" alt="부모와 아이가 함께 그림책을 읽으며 손을 맞잡은 그림" width={300} height={230} />
+          <img src="/images/celebrate.svg" alt="부모와 아이가 함께 그림책을 읽으며 이야기를 나누고 손을 맞잡은 그림" width={300} height={230} style={{ display: 'block' }} />
         </div>
         <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
           <b style={{ fontSize: 26 }}>잘했어요!</b>
