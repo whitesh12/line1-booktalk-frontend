@@ -24,7 +24,7 @@ export interface Word {
   image: string;
 }
 
-const img = (n: string) => `/images/words/${n}.jpg`;
+const img = (file: string) => `/images/words/${file}`; // 파일 이름에 확장자까지 (jpg / png)
 
 export const WORDS: Record<string, Word> = {
   dugeun: {
@@ -42,7 +42,7 @@ export const WORDS: Record<string, Word> = {
       { text: '쿵쾅쿵쾅', feel: '크고 세게 뛰어요', when: '크게 놀랐을 때', sample: '가슴이 쿵쾅쿵쾅해요 · 크게 놀랐을 때' },
     ],
     tip: '아이 손을 가슴에 대고 심장 뛰는 걸 함께 느끼며 “이게 바로 두근두근이야!” 하고 말해 보세요.',
-    image: img('dugeun'),
+    image: img('dugeun.jpg'),
   },
   pongdang: {
     id: 'pongdang', text: '퐁당', type: '의성어', motion: 'drop',
@@ -55,7 +55,7 @@ export const WORDS: Record<string, Word> = {
     examples: ['돌멩이를 던지니까 퐁당 소리가 났어요.', '사탕이 컵에 퐁당 빠졌어!'],
     similar: [{ text: '풍덩', feel: '크고 무겁게 빠져요', when: '사람·큰 물건' }],
     tip: '컵에 작은 장난감을 떨어뜨리며 “퐁당!” 하고 함께 말해 보세요.',
-    image: img('pongdang'),
+    image: img('pongdang.jpg'),
   },
   eongeong: {
     id: 'eongeong', text: '엉엉', type: '의성어', motion: 'sob',
@@ -65,7 +65,7 @@ export const WORDS: Record<string, Word> = {
     examples: ['아기 곰이 엉엉 울었어요.', '넘어져서 엉엉 울었구나.'],
     similar: [{ text: '훌쩍훌쩍', feel: '작게 콧물을 들이마시며 울어요', when: '조용히 울 때' }],
     tip: '두 손을 눈에 대고 우는 흉내를 내며 “엉엉” 말해 보세요. 그다음 꼭 안아 주세요.',
-    image: img('eongeong'),
+    image: img('eongeong.jpg'),
   },
   banjjak: {
     id: 'banjjak', text: '반짝반짝', type: '의태어', motion: 'twinkle',
@@ -75,7 +75,7 @@ export const WORDS: Record<string, Word> = {
     examples: ['밤하늘에 별이 반짝반짝 빛나요.', '새 신발이 반짝반짝하네!'],
     similar: [{ text: '번쩍번쩍', feel: '크고 강하게 빛나요', when: '번개·큰 불빛' }],
     tip: '손을 쥐었다 폈다 하면서 “반짝반짝” 별 흉내를 내 보세요.',
-    image: img('banjjak'),
+    image: img('banjjak.jpg'),
   },
   nuni: {
     id: 'nuni', text: '눈이 휘둥그레지다', type: '관용 표현', motion: null,
@@ -85,7 +85,7 @@ export const WORDS: Record<string, Word> = {
     examples: ['커다란 케이크를 보고 눈이 휘둥그레졌어요.'],
     similar: [{ text: '깜짝 놀라다', feel: '갑자기 놀라요', when: '모든 놀람' }],
     tip: '눈을 동그랗게 크게 뜨는 표정을 함께 지어 보세요.',
-    image: img('nuni'),
+    image: img('nuni.jpg'),
   },
   kkang: {
     id: 'kkang', text: '깡충깡충', type: '의태어', motion: 'hop',
@@ -95,7 +95,7 @@ export const WORDS: Record<string, Word> = {
     examples: ['토끼가 깡충깡충 뛰어가요.', '우리도 깡충깡충 뛰어 볼까?'],
     similar: [{ text: '껑충껑충', feel: '더 크고 멀리 뛰어요', when: '캥거루·큰 동물' }],
     tip: '두 발을 모으고 함께 뛰면서 “깡충깡충!” 말해 보세요.',
-    image: img('kkang'),
+    image: img('kkang.jpg'),
   },
   salgeum: {
     id: 'salgeum', text: '살금살금', type: '의태어', motion: 'tiptoe',
@@ -105,7 +105,7 @@ export const WORDS: Record<string, Word> = {
     examples: ['아빠가 자니까 살금살금 걸어가자.', '고양이가 살금살금 다가와요.'],
     similar: [{ text: '슬금슬금', feel: '눈치를 보며 슬그머니', when: '몰래 피할 때' }],
     tip: '발끝으로 걷는 흉내를 내며 작은 목소리로 “살금살금” 말해 보세요.',
-    image: img('salgeum'),
+    image: img('salgeum.png'),
   },
   degul: {
     id: 'degul', text: '데굴데굴', type: '의태어', motion: 'roll',
@@ -115,7 +115,7 @@ export const WORDS: Record<string, Word> = {
     examples: ['공이 데굴데굴 굴러가네!', '이불 위에서 데굴데굴 굴러요.'],
     similar: [{ text: '대굴대굴', feel: '작고 가볍게 굴러요', when: '작은 물건' }],
     tip: '공이나 귤을 굴리면서 “데굴데굴” 말해 보세요.',
-    image: img('degul'),
+    image: img('degul.png'),
   },
   cheombeong: {
     id: 'cheombeong', text: '첨벙첨벙', type: '의성어', motion: 'splash',
@@ -125,7 +125,7 @@ export const WORDS: Record<string, Word> = {
     examples: ['웅덩이에서 첨벙첨벙 놀자!', '오리가 첨벙첨벙 헤엄쳐요.'],
     similar: [{ text: '찰방찰방', feel: '얕은 물을 가볍게', when: '작은 물놀이' }],
     tip: '목욕할 때 손으로 물을 치면서 “첨벙첨벙” 말해 보세요.',
-    image: img('cheombeong'),
+    image: img('cheombeong.png'),
   },
   eonggeum: {
     id: 'eonggeum', text: '엉금엉금', type: '의태어', motion: 'crawl',
@@ -135,7 +135,7 @@ export const WORDS: Record<string, Word> = {
     examples: ['거북이가 엉금엉금 기어가요.', '아기가 엉금엉금 기어 와요.'],
     similar: [{ text: '느릿느릿', feel: '그냥 느리게 움직여요', when: '기지 않을 때도' }],
     tip: '바닥에서 함께 기어가며 “엉금엉금” 말해 보세요.',
-    image: img('eonggeum'),
+    image: img('eonggeum.png'),
   },
   kkubeok: {
     id: 'kkubeok', text: '꾸벅꾸벅', type: '의태어', motion: 'nod',
@@ -145,7 +145,7 @@ export const WORDS: Record<string, Word> = {
     examples: ['강아지가 꾸벅꾸벅 졸아요.', '밥 먹다가 꾸벅꾸벅 졸고 있네.'],
     similar: [{ text: '끄덕끄덕', feel: '‘네’ 하고 고개를 움직여요', when: '대답할 때' }],
     tip: '눈을 반쯤 감고 고개를 천천히 숙이며 “꾸벅꾸벅” 흉내 내 보세요.',
-    image: img('kkubeok'),
+    image: img('kkubeok.png'),
   },
   gubul: {
     id: 'gubul', text: '구불구불', type: '의태어', motion: 'wave',
@@ -155,7 +155,7 @@ export const WORDS: Record<string, Word> = {
     examples: ['구불구불한 산길을 걸어요.'],
     similar: [{ text: '꼬불꼬불', feel: '더 작고 촘촘하게 굽어요', when: '라면·머리카락' }],
     tip: '손가락으로 공중에 구불구불한 길을 함께 그려 보세요.',
-    image: img('gubul'),
+    image: img('gubul.png'),
   },
   ggulkkeok: {
     id: 'ggulkkeok', text: '꿀꺽', type: '의성어', motion: 'gulp',
@@ -165,7 +165,7 @@ export const WORDS: Record<string, Word> = {
     examples: ['호랑이가 떡을 꿀꺽 삼켰어요.', '물을 꿀꺽꿀꺽 마셔요.'],
     similar: [{ text: '홀짝', feel: '조금씩 마셔요', when: '뜨거운 음료' }],
     tip: '물을 마시며 목을 짚고 “꿀꺽” 소리를 함께 느껴 보세요.',
-    image: img('ggulkkeok'),
+    image: img('ggulkkeok.jpg'),
   },
   eongeongOnui: {
     id: 'eongeongOnui', text: '엉엉', type: '의성어', motion: 'sob',
@@ -175,7 +175,7 @@ export const WORDS: Record<string, Word> = {
     examples: ['오누이가 엉엉 울었어요.'],
     similar: [{ text: '훌쩍훌쩍', feel: '작게 울어요', when: '조용히 울 때' }],
     tip: '우는 흉내를 낸 뒤 “괜찮아” 하고 토닥이며 마음을 이야기해 보세요.',
-    image: img('eongeong_onui'),
+    image: img('eongeong_onui.jpg'),
   },
   adeung: {
     id: 'adeung', text: '아등바등', type: '의태어', motion: 'struggle',
@@ -185,7 +185,7 @@ export const WORDS: Record<string, Word> = {
     examples: ['오누이가 바위를 아등바등 밀었어요.'],
     similar: [{ text: '끙끙', feel: '힘들어서 소리를 내요', when: '무거운 것을 들 때' }],
     tip: '무거운 걸 미는 흉내를 내며 “아등바등” 말해 보세요.',
-    image: img('adeung'),
+    image: img('adeung.png'),
   },
   yeongcha: {
     id: 'yeongcha', text: '영차', type: '감탄사', motion: 'heave',
@@ -195,7 +195,7 @@ export const WORDS: Record<string, Word> = {
     examples: ['영차 영차, 다 같이 당겨요!'],
     similar: [{ text: '으쌰으쌰', feel: '힘을 내자는 응원', when: '함께 힘낼 때' }],
     tip: '아이와 손을 잡고 당기며 “영차!” 하고 박자를 맞춰 보세요.',
-    image: img('yeongcha'),
+    image: img('yeongcha.jpg'),
   },
 };
 

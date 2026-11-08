@@ -21,7 +21,7 @@ export function WordListPage() {
             <div key={w.id} style={{ position: 'relative' }}>
               <GoLink to={`/words/${w.id}?book=${book.id}`} className="card" style={{ padding: '10px 10px 14px', display: 'flex', flexDirection: 'column', gap: 8, textDecoration: 'none', color: 'inherit', height: '100%' }}>
                 <div style={{ position: 'relative', height: 80, borderRadius: 14, overflow: 'hidden', background: 'var(--bg)' }}>
-                  <img src={w.image} alt={`${w.text} 그림`} style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }} />
+                  <img src={w.image} alt={`${w.text} 그림`} loading="lazy" decoding="async" style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }} />
                   <TypeTag type={w.type} style={{ position: 'absolute', top: 6, left: 6, boxShadow: '0 1px 4px rgba(0,0,0,.12)' }} />
                 </div>
                 <div style={{ display: 'flex', flexDirection: 'column', gap: 3, padding: '0 4px' }}>
