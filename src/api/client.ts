@@ -101,6 +101,8 @@ export interface SentenceFeedback {
   goodPoint?: string;
   explain?: string;
   tips: string[];
+  /** 서버 첨삭에 실패해서 예시 응답을 보여 주는 중 */
+  fallback?: boolean;
 }
 
 export function mockSentenceFeedback(word: Word, sentence: string): SentenceFeedback {
@@ -152,7 +154,7 @@ export async function checkSentence(word: Word, sentence: string, childId?: stri
     return { kind, original: r.originalSentence, suggested: r.suggestedSentence, wrongPart: r.highlights?.[0]?.text, tips: [r.feedback] };
   } catch (e) {
     console.warn('[sentence-practices] 서버 첨삭 실패, 예시 응답으로 대신합니다', e);
-    return mockSentenceFeedback(word, sentence);
+    return { ...mockSentenceFeedback(word, sentence), fallback: true };
   }
 }
 
@@ -170,9 +172,30 @@ export async function withChild<T>(p: Profile, onChild: (id: string) => void, fn
   try {
     return await fn(id);
   } catch (e) {
-    if (!(e instanceof ApiError) || (e.status !== 401 && e.status !== 404)) throw e;
+    if (!(e instanceof ApiError)) throw e;
+    // 401 은 토큰 갱신까지 실패한 경우. 404 는 '아이가 정말 없어졌을 때'만 재등록한다.
+    const gone = e.status === 401 || (e.status === 404 && !(await childExists(id)));
+    if (!gone) throw e;
     return fn(await fresh());
   }
+}
+
+async function childExists(id: string): Promise<boolean> {
+  try {
+    const list = await request<{ id: string }[]>('/children');
+    return list.some((c) => c.id === id);
+  } catch (e) {
+    if (e instanceof ApiError && e.status === 401) return false;
+    throw e;
+  }
+}
+
+/** 설정에서 설명 언어를 바꾸면 서버의 아이 정보에도 반영한다. (분석 결과 번역 언어가 이걸 따른다) */
+export async function syncChildLanguage(p: Profile): Promise<void> {
+  if (USE_MOCK || !p.childId || !store.get(TOKEN_KEY)) return;
+  await request(`/children/${p.childId}`, {
+    method: 'PATCH', body: JSON.stringify({ explanationLanguage: LANGUAGE[p.lang] }),
+  });
 }
 
 export interface PageAnalysis {

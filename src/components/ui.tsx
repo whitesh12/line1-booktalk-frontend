@@ -2,6 +2,7 @@ import type { ReactNode } from 'react';
 import { useLocation } from 'react-router-dom';
 import type { Motion, WordType } from '../data/content';
 import { useBack, useGo } from '../lib/nav';
+import { loadProfile } from '../store/profile';
 
 const S = { fill: 'none', stroke: 'currentColor', strokeWidth: 2, strokeLinecap: 'round', strokeLinejoin: 'round' } as const;
 export const Icon = {
@@ -108,7 +109,8 @@ export function KidMessage({ name, children }: { name: string; children: ReactNo
   );
 }
 
-export function speak(text: string, rate = 1) {
+/** 읽어 주기. 속도를 따로 주지 않으면 내 정보의 '음성 안내 속도'를 따른다. */
+export function speak(text: string, rate = Number(loadProfile().speed) || 1) {
   if (!('speechSynthesis' in window)) return;
   window.speechSynthesis.cancel();
   const u = new SpeechSynthesisUtterance(text);
