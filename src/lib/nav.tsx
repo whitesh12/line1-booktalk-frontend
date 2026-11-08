@@ -46,7 +46,8 @@ export function useGo() {
   const navigate = useNavigate();
   return useCallback((target: string, opts: { state?: unknown } = {}) => {
     intentional = true;
-    if (FREE.includes(pathOf(target))) { navigate(target, { state: opts.state }); intentional = false; return; }
+    const fromHome = window.location.pathname === '/home' && !TABS.includes(pathOf(target));
+    if (fromHome || FREE.includes(pathOf(target))) { navigate(target, { state: opts.state }); intentional = false; return; }
 
     const chain = chainOf(target);
     const stack = readStack();
@@ -86,6 +87,16 @@ export function useGo() {
       finish();
     }
   }, [navigate]);
+}
+
+export function useBack() {
+  const go = useGo();
+  const navigate = useNavigate();
+  return useCallback((to: string) => {
+    const cur = historyIdx();
+    if (cur > 0 && pathOf(readStack()[cur - 1] ?? '') === '/home') navigate(-1);
+    else go(to);
+  }, [go, navigate]);
 }
 
 export function GoLink({ to, state, onClick, ...rest }: AnchorHTMLAttributes<HTMLAnchorElement> & { to: string; state?: unknown }) {

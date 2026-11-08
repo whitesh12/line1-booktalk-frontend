@@ -1,7 +1,7 @@
 import type { ReactNode } from 'react';
 import { useLocation } from 'react-router-dom';
 import type { Motion, WordType } from '../data/content';
-import { useGo } from '../lib/nav';
+import { useBack, useGo } from '../lib/nav';
 
 const S = { fill: 'none', stroke: 'currentColor', strokeWidth: 2, strokeLinecap: 'round', strokeLinejoin: 'round' } as const;
 export const Icon = {
@@ -29,11 +29,11 @@ export const Icon = {
 export function Header({ title, back = true, white = false, center = false, to, onBack }: {
   title: string; back?: boolean; white?: boolean; center?: boolean; to?: string; onBack?: () => void;
 }) {
-  const go = useGo();
+  const goBack = useBack();
   return (
     <header className={`header${white ? ' white' : ''}${center ? ' center' : ''}`}>
       {back && (to || onBack) && (
-        <button className="icon-btn" aria-label="뒤로" onClick={() => (onBack ? onBack() : go(to!))}>{Icon.back()}</button>
+        <button className="icon-btn" aria-label="뒤로" onClick={() => (onBack ? onBack() : goBack(to!))}>{Icon.back()}</button>
       )}
       <h1>{title}</h1>
     </header>

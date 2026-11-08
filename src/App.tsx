@@ -25,7 +25,7 @@ export default function App() {
   return (
     <div className="app">
       <Routes>
-        <Route path="/" element={<Navigate to={profile.onboarded ? '/home' : '/onboarding'} replace />} />
+        <Route path="/" element={<Navigate to="/onboarding" replace />} />
         <Route path="/onboarding" element={<OnboardingPage profile={profile} onSave={setProfile} />} />
         <Route path="/onboarding/privacy" element={<PrivacyNoticePage />} />
         <Route path="/home" element={<HomePage profile={profile} />} />
