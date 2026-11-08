@@ -2,20 +2,24 @@ import { useEffect } from 'react';
 import { Navigate, Route, Routes, useLocation } from 'react-router-dom';
 import { useProfile } from './store/profile';
 import { recordEntry } from './lib/nav';
-import { Onboarding, Privacy } from './pages/Start';
-import { Home, MyInfo } from './pages/Home';
-import { BookList, Camera, Extracting, WordList } from './pages/Books';
-import { WordDetail } from './pages/WordDetail';
-import { PracticeFeedback, PracticeReview, PracticeWrite } from './pages/Practice';
-import { TalkChat, TalkDone, TalkPrep } from './pages/Talk';
+import { OnboardingPage } from './pages/onboarding/OnboardingPage';
+import { PrivacyNoticePage } from './pages/onboarding/PrivacyNoticePage';
+import { HomePage } from './pages/home/HomePage';
+import { SettingsPage } from './pages/settings/SettingsPage';
+import { BookListPage } from './pages/books/BookListPage';
+import { WordListPage } from './pages/books/WordListPage';
+import { ScanPage } from './pages/scan/ScanPage';
+import { ScanAnalyzingPage } from './pages/scan/ScanAnalyzingPage';
+import { WordDetailPage } from './pages/word/WordDetailPage';
+import { PracticeWritePage } from './pages/practice/PracticeWritePage';
+import { PracticeReviewingPage } from './pages/practice/PracticeReviewingPage';
+import { PracticeFeedbackPage } from './pages/practice/PracticeFeedbackPage';
+import { TalkIntroPage } from './pages/talk/TalkIntroPage';
+import { TalkChatPage } from './pages/talk/TalkChatPage';
+import { TalkCompletePage } from './pages/talk/TalkCompletePage';
 
-// 화면 ID ↔ 경로 (최종 디자인 캔버스 기준)
-// /  → 저장된 프로필이 없으면 A-2, 있으면 B-1 (A-1 시작 화면은 없앰)
-// A-2 /onboarding · A-3 /privacy · B-1 /home · H-1 /me
-// 버튼·뒤로가기 규칙은 lib/nav.tsx
-// C-1 /books · C-2 /camera · C-3 /extracting · C-4 /books/:bookId
-// D-1 /word/:wordId · E-1 /practice/:wordId · E-2 …/review · E-3·E-3-1·E-4 …/feedback
-// F-1 /talk/:wordId · F-2·F-3·F-4·F-5 /talk/:wordId/chat · F-6 /talk/:wordId/done
+// 화면 경로. 디자인 번호와의 대응표는 README.md, 버튼·뒤로가기 규칙은 lib/nav.tsx
+// '/'는 저장된 프로필이 없으면 기본 정보 입력, 있으면 홈으로 바로 보낸다.
 export default function App() {
   const [profile, setProfile] = useProfile();
   const loc = useLocation();
@@ -24,21 +28,21 @@ export default function App() {
     <div className="app">
       <Routes>
         <Route path="/" element={<Navigate to={profile.onboarded ? '/home' : '/onboarding'} replace />} />
-        <Route path="/onboarding" element={<Onboarding profile={profile} onSave={setProfile} />} />
-        <Route path="/privacy" element={<Privacy />} />
-        <Route path="/home" element={<Home profile={profile} />} />
-        <Route path="/me" element={<MyInfo profile={profile} onSave={setProfile} />} />
-        <Route path="/books" element={<BookList />} />
-        <Route path="/books/:bookId" element={<WordList />} />
-        <Route path="/camera" element={<Camera />} />
-        <Route path="/extracting" element={<Extracting />} />
-        <Route path="/word/:wordId" element={<WordDetail />} />
-        <Route path="/practice/:wordId" element={<PracticeWrite />} />
-        <Route path="/practice/:wordId/review" element={<PracticeReview profile={profile} />} />
-        <Route path="/practice/:wordId/feedback" element={<PracticeFeedback />} />
-        <Route path="/talk/:wordId" element={<TalkPrep profile={profile} />} />
-        <Route path="/talk/:wordId/chat" element={<TalkChat profile={profile} />} />
-        <Route path="/talk/:wordId/done" element={<TalkDone profile={profile} />} />
+        <Route path="/onboarding" element={<OnboardingPage profile={profile} onSave={setProfile} />} />
+        <Route path="/onboarding/privacy" element={<PrivacyNoticePage />} />
+        <Route path="/home" element={<HomePage profile={profile} />} />
+        <Route path="/settings" element={<SettingsPage profile={profile} onSave={setProfile} />} />
+        <Route path="/books" element={<BookListPage />} />
+        <Route path="/books/:bookId" element={<WordListPage />} />
+        <Route path="/scan" element={<ScanPage />} />
+        <Route path="/scan/analyzing" element={<ScanAnalyzingPage />} />
+        <Route path="/words/:wordId" element={<WordDetailPage />} />
+        <Route path="/words/:wordId/practice" element={<PracticeWritePage />} />
+        <Route path="/words/:wordId/practice/reviewing" element={<PracticeReviewingPage profile={profile} />} />
+        <Route path="/words/:wordId/practice/feedback" element={<PracticeFeedbackPage />} />
+        <Route path="/words/:wordId/talk" element={<TalkIntroPage profile={profile} />} />
+        <Route path="/words/:wordId/talk/chat" element={<TalkChatPage profile={profile} />} />
+        <Route path="/words/:wordId/talk/complete" element={<TalkCompletePage profile={profile} />} />
         <Route path="*" element={<Navigate to="/home" replace />} />
       </Routes>
     </div>

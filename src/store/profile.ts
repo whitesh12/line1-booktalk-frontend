@@ -15,7 +15,7 @@ export interface Profile {
 }
 
 const KEY = 'booktalk.profile';
-// onboarded: A-2에서 직접 입력을 마쳤는지. 아니면 A-2 입력칸을 비워서 보여 준다(디자인).
+// onboarded: 기본 정보 입력을 마쳤는지. 아니면 기본 정보 입력칸을 비워서 보여 준다(디자인).
 // 그 전까지 다른 화면은 시연용 기본 프로필(유진·민준)을 쓴다.
 export const DEFAULT_PROFILE: Profile = {
   parentName: '유진', relation: '엄마', childName: '민준', childAge: 4, lang: 'vi', speed: '1.0',

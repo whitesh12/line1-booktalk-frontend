@@ -56,7 +56,7 @@ export function TabBar() {
     <nav className="tabbar" aria-label="메뉴">
       <NavLink {...tab('/home')}>{Icon.home()}홈</NavLink>
       <NavLink {...tab('/books')}>{Icon.book()}내 동화책</NavLink>
-      <NavLink {...tab('/me')}>{Icon.user()}내 정보</NavLink>
+      <NavLink {...tab('/settings')}>{Icon.user()}내 정보</NavLink>
     </nav>
   );
 }

@@ -1,17 +1,17 @@
 import { useState } from 'react';
-import { Header, Icon } from '../components/ui';
-import { registerProfile } from '../api/client';
-import { GoLink, useGo } from '../lib/nav';
-import type { Lang, Profile, Relation } from '../store/profile';
+import { Header, Icon } from '../../components/ui';
+import { registerProfile } from '../../api/client';
+import { useGo } from '../../lib/nav';
+import type { Lang, Profile, Relation } from '../../store/profile';
 
-/* A-2 기본 정보 입력 */
+/* 기본 정보 입력: 보호자·아이 이름, 관계, 설명 언어. 다음 → 개인정보 안내 */
 const LANGS: { id: Lang; name: string; ko: string }[] = [
   { id: 'vi', name: 'Tiếng Việt', ko: '베트남어' },
   { id: 'zh', name: '中文', ko: '중국어' },
   { id: 'en', name: 'English', ko: '영어' },
 ];
 
-export function Onboarding({ profile, onSave }: { profile: Profile; onSave: (p: Profile) => void }) {
+export function OnboardingPage({ profile, onSave }: { profile: Profile; onSave: (p: Profile) => void }) {
   const go = useGo();
   const [draft, setDraft] = useState(() => (profile.onboarded ? profile : { ...profile, parentName: '', childName: '' }));
   const [saving, setSaving] = useState(false);
@@ -25,7 +25,7 @@ export function Onboarding({ profile, onSave }: { profile: Profile; onSave: (p: 
     let childId = draft.childId;
     try { childId = (await registerProfile(draft)) ?? childId; } catch { /* 백엔드가 꺼져 있어도 계속 진행 */ }
     onSave({ ...draft, childId, onboarded: true });
-    go('/privacy');
+    go('/onboarding/privacy');
   }
 
   return (
@@ -70,38 +70,6 @@ export function Onboarding({ profile, onSave }: { profile: Profile; onSave: (p: 
       <div className="bottom-bar">
         <button className="btn btn-primary" disabled={saving} onClick={next}>{saving ? '저장하는 중…' : '다음'}</button>
       </div>
-    </div>
-  );
-}
-
-/* A-3 시작하기 전에 */
-const PRIVACY = [
-  { icon: Icon.camera, title: '사진은 글자 읽기에만 써요', text: '찍은 사진은 글자를 읽은 직후 바로 삭제돼요.' },
-  { icon: Icon.bookmark, title: '표현과 설명만 저장해요', text: '서버에는 추출한 단어와 설명만 남아요. 책 내용 전체는 저장하지 않아요.' },
-  { icon: Icon.lock, title: '다른 사용자와 공유하지 않아요', text: '내가 학습한 책 내용은 나만 볼 수 있어요.' },
-];
-
-export function Privacy() {
-  return (
-    <div className="screen">
-      <Header title="시작하기 전에" to="/onboarding" />
-      <div className="content" style={{ paddingBottom: 16 }}>
-        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-start', gap: 10, padding: '8px 4px 12px' }}>
-          <span style={{ width: 56, height: 56, borderRadius: 18, background: 'var(--mint-soft)', display: 'grid', placeItems: 'center' }}>{Icon.shield()}</span>
-          <p style={{ margin: 0, fontSize: 22, fontWeight: 800, lineHeight: 1.4, letterSpacing: '-0.02em' }}>사진과 책 내용은<br />이렇게 안전하게 다뤄요</p>
-        </div>
-        {PRIVACY.map((p) => (
-          <div key={p.title} className="card" style={{ display: 'flex', gap: 14, alignItems: 'flex-start' }}>
-            <span style={{ width: 44, height: 44, borderRadius: 14, background: 'var(--mint-soft)', display: 'grid', placeItems: 'center', flex: 'none', color: 'var(--primary)' }}>{p.icon(22)}</span>
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
-              <b style={{ fontSize: 16 }}>{p.title}</b>
-              <span style={{ fontSize: 14, lineHeight: 1.55, color: 'var(--text-sub)' }}>{p.text}</span>
-            </div>
-          </div>
-        ))}
-      </div>
-      {/* 홈으로 갈 때 A-2·A-3 기록을 바꿔치기 → 홈에서 뒤로가기로 설정 화면에 돌아가지 않음 */}
-      <div className="bottom-bar"><GoLink to="/home" className="btn btn-primary">확인했어요</GoLink></div>
     </div>
   );
 }

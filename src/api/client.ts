@@ -47,7 +47,7 @@ export async function registerProfile(p: Profile): Promise<string | undefined> {
   return child.id;
 }
 
-/* ── 문장 연습 (E-1 → E-2 → E-3 / E-3-1 / E-4) ── */
+/* ── 문장 연습 (작성 → AI 검토 → 피드백) ── */
 export type FeedbackKind = 'natural' | 'polish' | 'meaning' | 'missing';
 export interface SentenceFeedback {
   kind: FeedbackKind;
@@ -55,7 +55,7 @@ export interface SentenceFeedback {
   suggested?: string;
   wrongPart?: string;
   goodPoint?: string;
-  explain?: string; // 뜻 다시 보기(E-3-1)에서 이 문장에 맞춘 설명. 없으면 단어의 nuance
+  explain?: string; // 뜻 다시 보기 피드백에서 이 문장에 맞춘 설명. 없으면 단어의 nuance
   tips: string[];
 }
 
@@ -103,7 +103,7 @@ export async function checkSentence(word: Word, sentence: string, childId?: stri
   return { kind, original: r.originalSentence, suggested: r.suggestedSentence, wrongPart: r.highlights?.[0]?.text, tips: [r.feedback] };
 }
 
-/* ── 아이와 대화 (F-2 ~ F-5) ── */
+/* ── 아이와 대화 ── */
 export interface ChildReply { text: string; feedback?: { tips: string[] } }
 
 const OPENERS = ['토끼가 당근을 보고 가슴이 콩닥콩닥할 것 같아!'];
