@@ -2,7 +2,6 @@ import { useNavigate } from 'react-router-dom';
 import { historyIdx, useGo } from '../../lib/nav';
 import { Icon } from '../../components/ui';
 
-/* 촬영 (실제 카메라는 <input type="file" capture>로 연결). 촬영 → 표현 찾는 중 */
 export function ScanPage() {
   const nav = useNavigate();
   const go = useGo();
@@ -12,7 +11,6 @@ export function ScanPage() {
   return (
     <div className="screen" style={{ background: '#12151F', color: '#fff' }}>
       <header className="header">
-        {/* 촬영만 예외: 들어온 화면으로 (기록이 없으면 동화책 고르기) — 브라우저 뒤로가기와 같음 */}
         <button className="icon-btn" style={{ color: '#fff' }} aria-label="뒤로" onClick={() => (historyIdx() > 0 ? nav(-1) : go('/books'))}>{Icon.back()}</button>
         <h1>촬영</h1>
       </header>

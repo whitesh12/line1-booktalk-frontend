@@ -3,7 +3,6 @@ import { Header, Icon } from '../../components/ui';
 import type { Profile } from '../../store/profile';
 import { useTalk } from './shared';
 
-/* 대화 준비 (아이와 대화 연습). 대화 시작하기 → 대화 */
 export function TalkIntroPage({ profile }: { profile: Profile }) {
   const { w, book, qs } = useTalk();
   return (

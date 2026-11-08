@@ -1,7 +1,6 @@
 import { Header, Icon } from '../../components/ui';
 import { GoLink } from '../../lib/nav';
 
-/* 개인정보 안내 (시작하기 전에). 확인했어요 → 홈 */
 const PRIVACY = [
   { icon: Icon.camera, title: '사진은 글자 읽기에만 써요', text: '찍은 사진은 글자를 읽은 직후 바로 삭제돼요.' },
   { icon: Icon.bookmark, title: '표현과 설명만 저장해요', text: '서버에는 추출한 단어와 설명만 남아요. 책 내용 전체는 저장하지 않아요.' },
@@ -27,7 +26,6 @@ export function PrivacyNoticePage() {
           </div>
         ))}
       </div>
-      {/* 홈으로 갈 때 기본 정보·개인정보 안내 기록을 바꿔치기 → 홈에서 뒤로가기로 설정 화면에 돌아가지 않음 */}
       <div className="bottom-bar"><GoLink to="/home" className="btn btn-primary">확인했어요</GoLink></div>
     </div>
   );

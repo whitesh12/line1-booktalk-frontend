@@ -3,7 +3,6 @@ import { GoLink } from '../../lib/nav';
 import { AnimWord, Header, Icon, TabBar, TypeTag, speak } from '../../components/ui';
 import { BOOKS, WORDS, bookById } from '../../data/content';
 
-/* 책 한 권(한 페이지)의 단어 카드 목록. 카드 → 단어 상세 */
 export function WordListPage() {
   const { bookId } = useParams();
   const book = bookById(bookId) ?? BOOKS[0];
@@ -25,7 +24,6 @@ export function WordListPage() {
                   <TypeTag type={w.type} style={{ position: 'absolute', top: 6, left: 6, boxShadow: '0 1px 4px rgba(0,0,0,.12)' }} />
                 </div>
                 <div style={{ display: 'flex', flexDirection: 'column', gap: 3, padding: '0 4px' }}>
-                  {/* 디자인은 단어 줄 오른쪽에 듣기 버튼(28px, 간격 6px)이 있음 → 같은 자리를 비우고 버튼은 링크 밖에 절대 위치 */}
                   <div style={{ display: 'flex', alignItems: 'center', minHeight: 28, paddingRight: 34 }}>
                     <span style={{ fontWeight: 800, letterSpacing: '-0.02em', fontSize: w.text.length > 5 ? 15 : 19, lineHeight: 1.3 }}>
                       <AnimWord text={w.text} motion={w.motion} />

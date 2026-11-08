@@ -3,7 +3,6 @@ import { NavLink } from 'react-router-dom';
 import type { Motion, WordType } from '../data/content';
 import { useGo } from '../lib/nav';
 
-/* ── 아이콘 (2px 선 아이콘) ── */
 const S = { fill: 'none', stroke: 'currentColor', strokeWidth: 2, strokeLinecap: 'round', strokeLinejoin: 'round' } as const;
 export const Icon = {
   back: (p = 22) => <svg width={p} height={p} viewBox="0 0 24 24" {...S} strokeWidth={2.2} aria-hidden="true"><path d="M15 5l-7 7 7 7" /></svg>,
@@ -27,8 +26,6 @@ export const Icon = {
   translate: (p = 22) => <svg width={p} height={p} viewBox="0 0 24 24" fill="none" stroke="#1C7A6C" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M4 5h8" /><path d="M8 3v2" /><path d="M10 5c-.5 3.5-2.5 6-5.5 7.5" /><path d="M6 8.5c1 1.8 2.6 3.2 4.5 4" /><path d="M12.5 20l4-9 4 9" /><path d="M14 17h5" /></svg>,
 };
 
-/* ── 헤더 ── */
-// 뒤로 버튼: to(상위 화면)로 go() 이동 — 브라우저 뒤로가기와 같은 곳. onBack을 주면 그것을 실행.
 export function Header({ title, back = true, white = false, center = false, to, onBack }: {
   title: string; back?: boolean; white?: boolean; center?: boolean; to?: string; onBack?: () => void;
 }) {
@@ -47,7 +44,6 @@ export function PageTitle({ title, sub, lineHeight }: { title: string; sub?: str
   return <div className="page-title"><h1 style={lineHeight ? { lineHeight } : undefined}>{title}</h1>{sub && <p>{sub}</p>}</div>;
 }
 
-/* ── 하단 탭 (홈 / 내 동화책 / 내 정보) ── */
 export function TabBar() {
   const go = useGo();
   const cls = ({ isActive }: { isActive: boolean }) => (isActive ? 'active' : '');
@@ -61,7 +57,6 @@ export function TabBar() {
   );
 }
 
-/* ── 단어가 뜻대로 움직이는 효과 ── */
 const STAGGER: Partial<Record<NonNullable<Motion>, number>> = { twinkle: 0.37, tiptoe: 0.25, sob: 0.2 };
 export function AnimWord({ text, motion, mode = 'hover' }: { text: string; motion: Motion; mode?: 'loop' | 'hover' | 'none' }) {
   if (!motion || mode === 'none') return <>{text}</>;
@@ -80,7 +75,6 @@ export function TypeTag({ type, style }: { type: WordType; style?: React.CSSProp
   return <span className={`tag ${TAG_CLASS[type]}`} style={style}>{type}</span>;
 }
 
-/* 문장 속 목표 단어에 형광펜 */
 export function Highlight({ sentence, word }: { sentence: string; word: string }) {
   const stem = word.split(' ')[0];
   const parts = sentence.split(stem);
@@ -99,7 +93,6 @@ export function KidMessage({ name, children }: { name: string; children: ReactNo
   );
 }
 
-/* 브라우저 내장 음성으로 읽어 주기 (백엔드 연결 후 POST /speech/synthesis로 교체 가능) */
 export function speak(text: string, rate = 1) {
   if (!('speechSynthesis' in window)) return;
   window.speechSynthesis.cancel();

@@ -1,4 +1,3 @@
-/* ── 디자인 토큰 (최종 디자인 캔버스 기준) ── */
 :root {
   --bg: #f6f7fb;
   --surface: #ffffff;
@@ -35,7 +34,6 @@ body { font-family: var(--font); color: var(--text); -webkit-font-smoothing: ant
 button, input, textarea, select { font: inherit; color: inherit; }
 a { color: var(--primary); }
 
-/* 앱 화면: 휴대폰 폭(390px) 기준, 넓은 화면에서는 가운데 정렬 */
 .app {
   position: relative;
   width: 100%;
@@ -50,7 +48,6 @@ a { color: var(--primary); }
 .content { flex: 1; display: flex; flex-direction: column; gap: 14px; padding: 8px 20px 20px; }
 .content.center { align-items: center; justify-content: center; text-align: center; }
 
-/* 헤더 */
 .header { height: 56px; flex: none; display: flex; align-items: center; gap: 4px; padding: 0 8px; }
 .header.white { background: var(--surface); border-bottom: 1px solid var(--border); }
 .header.center { justify-content: center; }
@@ -60,7 +57,6 @@ a { color: var(--primary); }
 .page-title h1 { margin: 0; font-size: 24px; font-weight: 800; }
 .page-title p { margin: 4px 0 0; font-size: 15px; color: var(--text-sub); }
 
-/* 버튼 */
 .btn { display: flex; align-items: center; justify-content: center; gap: 8px; width: 100%; height: 56px; border-radius: var(--radius-btn); border: 0; font-size: 17px; font-weight: 700; text-decoration: none; cursor: pointer; }
 .btn-primary { background: var(--primary); color: #fff; }
 .btn-primary:disabled { background: #b7c3c1; cursor: not-allowed; }
@@ -69,7 +65,6 @@ a { color: var(--primary); }
 .btn-soft { background: var(--mint-soft); color: var(--primary-dark); border: 1.5px solid var(--mint-line); height: 52px; font-size: 16px; }
 .bottom-bar { flex: none; display: flex; gap: 10px; padding: 12px 20px 28px; }
 
-/* 카드, 칩, 태그 */
 .card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius-card); padding: 18px; }
 .card.selected { border: 2px solid var(--primary); }
 .card-label { margin: 0 0 6px; font-size: 13px; font-weight: 700; color: var(--text-sub); }
@@ -83,7 +78,6 @@ a { color: var(--primary); }
 .tag-idiom { background: #ecebfa; color: #4b3fa3; }
 .tag-interjection { background: #ffebc2; color: #7a4e00; }
 
-/* 안내 상자 */
 .banner { display: flex; align-items: center; gap: 12px; background: var(--mint-soft); border-radius: 18px; padding: 14px 16px; font-size: 15px; font-weight: 700; line-height: 1.45; color: var(--primary-dark); }
 .banner.coral { background: var(--coral-soft); color: #8a3a22; }
 .banner .dot { width: 36px; height: 36px; border-radius: 50%; display: grid; place-items: center; flex: none; background: var(--primary); }
@@ -94,7 +88,6 @@ a { color: var(--primary); }
 .hl { background: linear-gradient(transparent 55%, var(--highlight) 55%); font-weight: 700; }
 .wavy { text-decoration: underline wavy #d9480f; text-underline-offset: 5px; }
 
-/* 입력 */
 .field { display: flex; flex-direction: column; gap: 8px; }
 .field > label, .field > .label { font-size: 15px; font-weight: 700; }
 .input { height: 52px; border: 1.5px solid var(--input-border); border-radius: 14px; background: var(--surface); padding: 0 16px; font-size: 16px; }
@@ -103,14 +96,11 @@ a { color: var(--primary); }
 .toggle { flex: none; height: 44px; padding: 0 20px; border-radius: 999px; border: 1.5px solid var(--input-border); background: var(--surface); color: var(--text-body); font-size: 15px; font-weight: 500; cursor: pointer; }
 .toggle[aria-pressed='true'] { border-color: var(--primary); background: var(--mint-soft); color: var(--primary); font-weight: 700; }
 
-/* 하단 탭 */
 .tabbar { flex: none; height: 72px; display: grid; grid-template-columns: repeat(3, 1fr); background: var(--surface); border-top: 1px solid var(--border); position: sticky; bottom: 0; }
 .tabbar a { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 4px; font-size: 12px; font-weight: 500; color: var(--text-sub); text-decoration: none; }
 .tabbar a.active { color: var(--primary); font-weight: 700; }
 
-/* 채팅 */
 .chat { flex: 1; display: flex; flex-direction: column; gap: 12px; padding: 18px 16px; min-height: 0; overflow-y: auto; }
-/* F-3 대화 완료: 대화가 길어져 말풍선을 조금 작게 */
 .chat.done { gap: 9px; padding: 14px 16px 24px; }
 .chat.done .bubble-kid, .chat.done .bubble-me { padding: 9px 13px; font-size: 14px; line-height: 1.5; }
 .chat.done .bubble-me { max-width: 80%; }
@@ -119,7 +109,6 @@ a { color: var(--primary); }
 .bubble-kid { margin: 0; background: var(--child-bubble); border-radius: 4px 18px 18px 18px; padding: 11px 14px; font-size: 15px; line-height: 1.55; }
 .bubble-me { margin: 0; align-self: flex-end; max-width: 78%; background: var(--primary); color: #fff; border-radius: 18px 4px 18px 18px; padding: 11px 14px; font-size: 15px; line-height: 1.55; }
 .bubble-me b { color: var(--highlight); }
-/* 디자인 원본은 content-box 기준이라 max-width에 안쪽 여백이 더해짐 → 같은 폭이 되도록 맞춤 */
 .bubble-kid, .bubble-me { box-sizing: content-box; }
 .who { font-size: 12px; color: var(--text-sub); }
 .composer { flex: none; display: flex; align-items: center; gap: 8px; padding: 10px 12px 26px; background: var(--surface); border-top: 1px solid var(--border); }

@@ -2,7 +2,6 @@ import { GoLink } from '../../lib/nav';
 import { PageTitle, TabBar, Icon } from '../../components/ui';
 import { BOOKS } from '../../data/content';
 
-/* 동화책 고르기 (탭): 책 카드 → 단어 목록, 책 추가하기 → 촬영 */
 export function BookListPage() {
   return (
     <div className="screen">

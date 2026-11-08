@@ -1,4 +1,3 @@
-/* Pretendard — 디자인 전달 자료(screens/*.html)와 같은 4종 woff2·같은 굵기 매핑 */
 @font-face { font-family: 'Pretendard'; src: url('pretendard/dist/web/static/woff2/Pretendard-Regular.woff2') format('woff2'); font-weight: 400; font-display: swap; }
 @font-face { font-family: 'Pretendard'; src: url('pretendard/dist/web/static/woff2/Pretendard-Medium.woff2') format('woff2'); font-weight: 500 600; font-display: swap; }
 @font-face { font-family: 'Pretendard'; src: url('pretendard/dist/web/static/woff2/Pretendard-Bold.woff2') format('woff2'); font-weight: 700; font-display: swap; }

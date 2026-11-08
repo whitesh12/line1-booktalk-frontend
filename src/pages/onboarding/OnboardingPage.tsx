@@ -4,7 +4,6 @@ import { registerProfile } from '../../api/client';
 import { useGo } from '../../lib/nav';
 import type { Lang, Profile, Relation } from '../../store/profile';
 
-/* 기본 정보 입력: 보호자·아이 이름, 관계, 설명 언어. 다음 → 개인정보 안내 */
 const LANGS: { id: Lang; name: string; ko: string }[] = [
   { id: 'vi', name: 'Tiếng Việt', ko: '베트남어' },
   { id: 'zh', name: '中文', ko: '중국어' },
@@ -18,12 +17,11 @@ export function OnboardingPage({ profile, onSave }: { profile: Profile; onSave: 
   const set = (patch: Partial<Profile>) => setDraft((d) => ({ ...d, ...patch }));
 
   async function next() {
-    // 디자인처럼 버튼은 늘 활성 상태로 두고, 빈 칸이 있으면 그 칸으로 이동한다
     const empty = !draft.parentName.trim() ? 'parentName' : !draft.childName.trim() ? 'childName' : null;
     if (empty) { document.getElementById(empty)?.focus(); return; }
     setSaving(true);
     let childId = draft.childId;
-    try { childId = (await registerProfile(draft)) ?? childId; } catch { /* 백엔드가 꺼져 있어도 계속 진행 */ }
+    try { childId = (await registerProfile(draft)) ?? childId; } catch {}
     onSave({ ...draft, childId, onboarded: true });
     go('/onboarding/privacy');
   }

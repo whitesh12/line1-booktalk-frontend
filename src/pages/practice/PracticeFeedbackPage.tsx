@@ -5,7 +5,6 @@ import { mockSentenceFeedback, type SentenceFeedback } from '../../api/client';
 import { wordVi } from '../../data/wordDetail';
 import { DEMO_SENTENCE, cardPad, setDraft, usePracticeWord } from './shared';
 
-/* AI 피드백: 자연스러워요(natural) / 다듬기(polish·missing) / 뜻 다시 보기(meaning) */
 export function PracticeFeedbackPage() {
   const { w, qs, demo } = usePracticeWord();
   const fb = (useLocation().state as { fb?: SentenceFeedback } | null)?.fb

@@ -18,8 +18,6 @@ import { TalkIntroPage } from './pages/talk/TalkIntroPage';
 import { TalkChatPage } from './pages/talk/TalkChatPage';
 import { TalkCompletePage } from './pages/talk/TalkCompletePage';
 
-// 화면 경로. 디자인 번호와의 대응표는 README.md, 버튼·뒤로가기 규칙은 lib/nav.tsx
-// '/'는 저장된 프로필이 없으면 기본 정보 입력, 있으면 홈으로 바로 보낸다.
 export default function App() {
   const [profile, setProfile] = useProfile();
   const loc = useLocation();

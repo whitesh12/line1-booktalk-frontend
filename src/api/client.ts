@@ -1,6 +1,3 @@
-// 백엔드(Spring) API 연결 계층.
-// VITE_API_BASE_URL 이 비어 있으면 모든 함수가 모의 응답을 돌려줘서 화면만으로 시연할 수 있다.
-// 명세: backend/docs/backend.history/03-API-명세.md (응답은 { data, meta } 형식)
 import type { Profile } from '../store/profile';
 import type { Word } from '../data/content';
 
@@ -25,7 +22,6 @@ async function request<T>(path: string, init: RequestInit = {}): Promise<T> {
   return body.data as T;
 }
 
-/* ── 인증과 아이 ── */
 const RELATION = { 엄마: 'MOTHER', 아빠: 'FATHER', 보호자: 'GUARDIAN' } as const;
 const LANGUAGE = { vi: 'VI', zh: 'ZH_CN', en: 'EN' } as const;
 
@@ -47,7 +43,6 @@ export async function registerProfile(p: Profile): Promise<string | undefined> {
   return child.id;
 }
 
-/* ── 문장 연습 (작성 → AI 검토 → 피드백) ── */
 export type FeedbackKind = 'natural' | 'polish' | 'meaning' | 'missing';
 export interface SentenceFeedback {
   kind: FeedbackKind;
@@ -55,11 +50,10 @@ export interface SentenceFeedback {
   suggested?: string;
   wrongPart?: string;
   goodPoint?: string;
-  explain?: string; // 뜻 다시 보기 피드백에서 이 문장에 맞춘 설명. 없으면 단어의 nuance
+  explain?: string;
   tips: string[];
 }
 
-// 받침 여부로 을/를을 고르는 등, 모의 응답을 그럴듯하게 만들기 위한 아주 단순한 규칙이다.
 export function mockSentenceFeedback(word: Word, sentence: string): SentenceFeedback {
   const s = sentence.trim();
   const stem = word.text.split(' ')[0];
@@ -92,7 +86,6 @@ export async function checkSentence(word: Word, sentence: string, childId?: stri
     await wait(1400);
     return mockSentenceFeedback(word, sentence);
   }
-  // 백엔드 표현 id는 페이지 분석 결과에서 받아와야 한다. 지금은 데모 데이터 id를 그대로 넘긴다.
   const r = await request<{ assessment: string; meaningDelivered: boolean; targetWordUsed: boolean;
     originalSentence: string; suggestedSentence: string; feedback: string; highlights: { text: string }[] }>(
     `/children/${childId}/sentence-practices`,
@@ -103,7 +96,6 @@ export async function checkSentence(word: Word, sentence: string, childId?: stri
   return { kind, original: r.originalSentence, suggested: r.suggestedSentence, wrongPart: r.highlights?.[0]?.text, tips: [r.feedback] };
 }
 
-/* ── 아이와 대화 ── */
 export interface ChildReply { text: string; feedback?: { tips: string[] } }
 
 const OPENERS = ['토끼가 당근을 보고 가슴이 콩닥콩닥할 것 같아!'];

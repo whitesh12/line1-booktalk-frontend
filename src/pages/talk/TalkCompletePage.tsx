@@ -3,7 +3,6 @@ import { Header } from '../../components/ui';
 import type { Profile } from '../../store/profile';
 import { useTalk } from './shared';
 
-/* 대화 마무리. 목록으로 → 그 책의 단어 목록 */
 export function TalkCompletePage({ profile }: { profile: Profile }) {
   const { book } = useTalk();
   return (

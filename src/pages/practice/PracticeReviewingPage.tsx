@@ -5,11 +5,10 @@ import { checkSentence } from '../../api/client';
 import type { Profile } from '../../store/profile';
 import { DEMO_SENTENCE, LOCAL_CSS, sparkPath, usePracticeWord } from './shared';
 
-/* AI 검토 중 (로딩). 끝나면 피드백으로 replace → 뒤로가기로 다시 나오지 않음 */
 export function PracticeReviewingPage({ profile }: { profile: Profile }) {
   const { w, qs, demo } = usePracticeWord();
   const nav = useNavigate();
-  const hold = demo === 'waiting'; // 시연용: ?demo=waiting 이면 검토 중 화면에 머문다
+  const hold = demo === 'waiting';
   const sentence = (useLocation().state as { sentence?: string } | null)?.sentence ?? (hold ? DEMO_SENTENCE.polish : undefined);
   useEffect(() => {
     if (!sentence || hold) return;

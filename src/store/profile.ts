@@ -10,13 +10,11 @@ export interface Profile {
   childAge: number;
   lang: Lang;
   speed: '0.8' | '1.0' | '1.2';
-  childId?: string; // 백엔드 연결 시 POST /children 결과
+  childId?: string;
   onboarded?: boolean;
 }
 
 const KEY = 'booktalk.profile';
-// onboarded: 기본 정보 입력을 마쳤는지. 아니면 기본 정보 입력칸을 비워서 보여 준다(디자인).
-// 그 전까지 다른 화면은 시연용 기본 프로필(유진·민준)을 쓴다.
 export const DEFAULT_PROFILE: Profile = {
   parentName: '유진', relation: '엄마', childName: '민준', childAge: 4, lang: 'vi', speed: '1.0',
 };
@@ -31,7 +29,7 @@ export function loadProfile(): Profile {
 }
 
 export function saveProfile(p: Profile) {
-  try { localStorage.setItem(KEY, JSON.stringify(p)); } catch { /* 저장 공간이 없어도 화면은 동작 */ }
+  try { localStorage.setItem(KEY, JSON.stringify(p)); } catch {}
 }
 
 export function useProfile(): [Profile, (p: Profile) => void] {

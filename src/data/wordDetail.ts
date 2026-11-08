@@ -1,7 +1,5 @@
-// 단어 상세 화면에만 있는 문구 (디자인 기준). 나중에 content.ts / 백엔드 응답으로 옮긴다.
 import type { Word } from './content';
 
-/* 최종 디자인의 단어 상세에만 있는 문구. content.ts에 필드가 생기면 그쪽으로 옮긴다. */
 export interface GuideStep { title: string; items: { label?: string; text: string; boxed?: boolean }[] }
 export const DETAIL: Record<string, { vi?: string; feel?: string; feelVi?: string; similarVi?: string[]; guide?: GuideStep[] }> = {
   dugeun: {
@@ -25,7 +23,6 @@ export const DETAIL: Record<string, { vi?: string; feel?: string; feelVi?: strin
   },
 };
 
-/** 디자인 기준 베트남어 뜻 (뜻 다시 보기 피드백에서도 같이 씀) */
 export const wordVi = (w: Word) => DETAIL[w.id]?.vi ?? w.vi;
 
 export const guideFor = (w: Word): GuideStep[] => DETAIL[w.id]?.guide ?? [

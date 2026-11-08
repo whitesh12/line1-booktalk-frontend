@@ -5,7 +5,6 @@ import { AnimWord, Header, Highlight, Icon, speak } from '../../components/ui';
 import { BOOKS, WORDS, bookById, sceneFor } from '../../data/content';
 import { DETAIL, guideFor, wordVi } from '../../data/wordDetail';
 
-/* 문장 속 목표 단어를 굵게 */
 function Bold({ text, word }: { text: string; word: string }) {
   const stem = word.split(' ')[0];
   const parts = text.split(stem);
@@ -14,12 +13,10 @@ function Bold({ text, word }: { text: string; word: string }) {
 
 const exprFont = { fontWeight: 800, letterSpacing: '-0.02em', fontSize: 19 } as const;
 const grid = { display: 'grid', gridTemplateColumns: '96px minmax(0, 1fr) 96px', gap: 8 } as const;
-/* 단어 상세: 뜻, 이럴 때 써요, 그림책 속 문장, 비슷한 표현, 아이에게는 이렇게. 문장 연습 → 문장 작성 */
 export function WordDetailPage() {
   const { wordId = 'dugeun' } = useParams();
   const [q] = useSearchParams();
   const w = WORDS[wordId] ?? WORDS.dugeun;
-  // 책 정보 없이 들어와도(홈 등) 뒤로 가기는 그 단어가 있는 책의 단어 목록으로
   const book = bookById(q.get('book') ?? undefined) ?? BOOKS.find((b) => b.wordIds.includes(w.id));
   const scene = sceneFor(w, book);
   const extra = DETAIL[w.id] ?? {};

@@ -7,11 +7,9 @@ import { MAX_TURNS, childScript, openingLine, sendToChild, talkFeedbackTips } fr
 import type { Profile } from '../../store/profile';
 import { useTalk } from './shared';
 
-/* 대화: 대화 중 · 아이 응답 대기 · 대화 중 피드백 · 대화 완료가 한 화면의 상태 */
 type Msg = { from: 'kid'; text: string } | { from: 'me'; text: string } | { from: 'feedback'; tips: string[] };
 type Seed = { msgs: Msg[]; turn: number; waiting: boolean };
 
-/* 시연용 시작 상태 (디자인의 대화 중·응답 대기·대화 중 피드백·대화 완료 내용). ?demo=chat|waiting|feedback|done */
 function demoSeed(demo: string | null, w: Word, name: string): Seed {
   const kid = (text: string): Msg => ({ from: 'kid', text });
   const me = (text: string): Msg => ({ from: 'me', text });
@@ -65,13 +63,9 @@ export function TalkChatPage({ profile }: { profile: Profile }) {
   }
 
   const retry = msgs.some((m) => m.from === 'feedback');
-  // 도움말: 처음 두 번, 아이가 말하고 내 차례일 때 (디자인 '대화 중')
   const showHint = !waiting && !retry && turn < 2 && msgs[msgs.length - 1]?.from === 'kid';
-  // 피드백 바로 앞 내 말은 고칠 부분(단어+조사)까지 강조 (디자인 '대화 중 피드백')
   const fixIdx = msgs.findIndex((m) => m.from === 'feedback') - 1;
 
-  // 대화 중에 나가려 하면 '대화를 그만할까요?' 확인 → 대화 준비.
-  // 화면 속 뒤로 버튼과 브라우저·휴대폰 뒤로가기 모두. 대화를 마친 뒤에는 묻지 않는다.
   const prep = `/words/${w.id}/talk${qs}`;
   const blocker = useBlocker(({ currentLocation, nextLocation }) =>
     !done && !isIntentionalNav() && currentLocation.pathname !== nextLocation.pathname);

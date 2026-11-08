@@ -15,7 +15,6 @@ const Heart = ({ size, color, style }: { size: number; color: string; style: Rea
   </svg>
 );
 
-/* 홈 (탭): 사진 찍기, 이어서 학습하기, 최근 학습한 단어 */
 export function HomePage({ profile }: { profile: Profile }) {
   const recent = ['dugeun', 'pongdang', 'eongeong', 'banjjak'].map((id) => WORDS[id]);
   return (

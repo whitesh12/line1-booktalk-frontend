@@ -1,12 +1,8 @@
-// 최종 디자인에 들어간 시연용 콘텐츠.
-// 백엔드 연결 후에는 GET /v1/books/pages/{pageId}/analysis, GET /v1/vocabulary/{id} 응답으로 바꾸면 된다.
-
 export type WordType = '의태어' | '의성어' | '관용 표현' | '감탄사';
 export type Motion =
   | 'beat' | 'drop' | 'sob' | 'twinkle' | 'hop' | 'tiptoe' | 'roll'
   | 'splash' | 'crawl' | 'nod' | 'wave' | 'gulp' | 'struggle' | 'heave' | null;
 
-// sample: 자연스러워요 피드백 '이런 표현도 써 보세요'에 보여 줄 예문 · 쓰는 때 (없으면 feel · when)
 export interface Similar { text: string; feel: string; when: string; sample?: string; }
 export interface Word {
   id: string;
@@ -24,7 +20,7 @@ export interface Word {
   image: string;
 }
 
-const img = (file: string) => `/images/words/${file}`; // 파일 이름에 확장자까지 (jpg / png)
+const img = (file: string) => `/images/words/${file}`;
 
 export const WORDS: Record<string, Word> = {
   dugeun: {
@@ -202,12 +198,12 @@ export const WORDS: Record<string, Word> = {
 export interface Book {
   id: string;
   title: string;
-  page: string; // 표지 옆 쪽수 표시 (단어 목록 디자인은 토끼의 당근 밭만 '· 4쪽'을 보여 줌, 빈 값이면 생략)
+  page: string;
   cover: string;
-  coverBg: string; // 표지 그림 뒤 바탕색 (동화책 고르기)
+  coverBg: string;
   coverAlt: string;
   wordIds: string[];
-  scenes: Record<string, string>; // 단어 → 책 속 문장
+  scenes: Record<string, string>;
 }
 
 export const BOOKS: Book[] = [

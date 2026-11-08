@@ -1,14 +1,12 @@
 import { Icon, PageTitle, TabBar } from '../../components/ui';
 import type { Profile } from '../../store/profile';
 
-/* 음성 안내 속도 아이콘 (소리 물결 2줄) */
 const SpeakerWaves = (
   <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#1C7A6C" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
     <path d="M4 9v6h4l5 4V5L8 9H4z" /><path d="M16.5 8.5a5 5 0 010 7" /><path d="M19 6a8.5 8.5 0 010 12" />
   </svg>
 );
 
-/* 내 정보 및 설정 (탭): 설명 언어, 음성 안내 속도 */
 export function SettingsPage({ profile, onSave }: { profile: Profile; onSave: (p: Profile) => void }) {
   const row = (icon: JSX.Element, id: string, title: string, sub: string, control: JSX.Element) => (
     <div className="card" style={{ display: 'flex', alignItems: 'center', gap: 14, padding: 16 }}>
