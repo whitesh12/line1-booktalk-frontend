@@ -1,6 +1,6 @@
 import { useNavigate } from 'react-router-dom';
 import { historyIdx, useGo } from '../../lib/nav';
-import { Icon } from '../../components/ui';
+import { Icon, TabBar } from '../../components/ui';
 
 export function ScanPage() {
   const nav = useNavigate();
@@ -36,6 +36,7 @@ export function ScanPage() {
         </button>
         <span style={{ fontSize: 13, color: '#B7BFCD' }}>사진은 저장되지 않고 글자를 읽은 뒤 바로 삭제돼요</span>
       </div>
+      <TabBar />
     </div>
   );
 }

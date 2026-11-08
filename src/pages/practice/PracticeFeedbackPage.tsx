@@ -1,5 +1,5 @@
 import { Navigate, useLocation } from 'react-router-dom';
-import { Header, Highlight, Icon } from '../../components/ui';
+import { Header, Highlight, Icon, TabBar } from '../../components/ui';
 import { GoLink } from '../../lib/nav';
 import { mockSentenceFeedback, type SentenceFeedback } from '../../api/client';
 import { wordVi } from '../../data/wordDetail';
@@ -40,6 +40,7 @@ export function PracticeFeedbackPage() {
           <GoLink to={`/words/${w.id}/practice${qs}`} onClick={() => setDraft(w.id, null)} className="btn btn-outline" style={{ fontSize: 16 }}>한번 더 연습</GoLink>
           <GoLink to={`/words/${w.id}/talk${qs}`} className="btn btn-primary" style={{ fontSize: 16 }}>대화 연습</GoLink>
         </div>
+        <TabBar />
       </div>
     );
   }
@@ -85,6 +86,7 @@ export function PracticeFeedbackPage() {
         {meaning && <GoLink to={`/words/${w.id}${qs}`} className="btn btn-outline" style={{ fontSize: 16 }}>뜻 다시 보기</GoLink>}
         <GoLink to={`/words/${w.id}/practice${qs}`} onClick={() => setDraft(w.id, fb.original)} className="btn btn-primary" style={meaning ? { fontSize: 16 } : undefined}>{Icon.pencil(meaning ? 18 : 20)}다시 써 보기</GoLink>
       </div>
+      <TabBar />
     </div>
   );
 }

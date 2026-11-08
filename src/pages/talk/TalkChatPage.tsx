@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import { useBlocker, useSearchParams } from 'react-router-dom';
-import { Header, Icon, KidMessage } from '../../components/ui';
+import { Header, Icon, KidMessage, TabBar } from '../../components/ui';
 import type { Word } from '../../data/content';
 import { isIntentionalNav, useGo } from '../../lib/nav';
 import { MAX_TURNS, childScript, openingLine, sendToChild, talkFeedbackTips } from '../../api/client';
@@ -69,14 +69,20 @@ export function TalkChatPage({ profile }: { profile: Profile }) {
   const prep = `/words/${w.id}/talk${qs}`;
   const blocker = useBlocker(({ currentLocation, nextLocation }) =>
     !done && !isIntentionalNav() && currentLocation.pathname !== nextLocation.pathname);
-  const [ask, setAsk] = useState(false);
-  const asking = ask || blocker.state === 'blocked';
-  const stay = () => { setAsk(false); if (blocker.state === 'blocked') blocker.reset(); };
-  const leave = () => { setAsk(false); if (blocker.state === 'blocked') blocker.proceed(); else go(prep); };
+  const [pending, setPending] = useState<(() => void) | null>(null);
+  const asking = pending !== null || blocker.state === 'blocked';
+  const confirmLeave = (leave: () => void) => (done ? leave() : setPending(() => leave));
+  const stay = () => { setPending(null); if (blocker.state === 'blocked') blocker.reset(); };
+  const leave = () => {
+    const next = pending;
+    setPending(null);
+    if (blocker.state === 'blocked') blocker.proceed();
+    else next?.();
+  };
 
   return (
     <div className="screen" style={{ height: '100dvh' }}>
-      <Header title={`‘${w.text}’ 대화 연습`} white onBack={() => (done ? go(prep) : setAsk(true))} />
+      <Header title={`‘${w.text}’ 대화 연습`} white onBack={() => confirmLeave(() => go(prep))} />
       {asking && (
         <div role="dialog" aria-modal="true" aria-labelledby="quit-title" style={{ position: 'fixed', inset: 0, zIndex: 10, background: 'rgba(29, 36, 51, .45)', display: 'grid', placeItems: 'center', padding: 24 }}>
           <div style={{ width: '100%', maxWidth: 340, background: '#fff', borderRadius: 20, padding: '24px 20px 20px', display: 'flex', flexDirection: 'column', gap: 8, textAlign: 'center' }}>
@@ -127,6 +133,7 @@ export function TalkChatPage({ profile }: { profile: Profile }) {
           <button type="submit" className="round send" aria-label="보내기" disabled={waiting}>{Icon.arrow()}</button>
         </form>
       )}
+      <TabBar onLeave={confirmLeave} />
     </div>
   );
 }

@@ -1,5 +1,5 @@
 import { GoLink } from '../../lib/nav';
-import { Header, Icon } from '../../components/ui';
+import { Header, Icon, TabBar } from '../../components/ui';
 import type { Profile } from '../../store/profile';
 import { useTalk } from './shared';
 
@@ -24,6 +24,7 @@ export function TalkIntroPage({ profile }: { profile: Profile }) {
         </div>
       </div>
       <div className="bottom-bar"><GoLink to={`/words/${w.id}/talk/chat${qs}`} className="btn btn-primary">{Icon.chat()}대화 시작하기</GoLink></div>
+      <TabBar />
     </div>
   );
 }

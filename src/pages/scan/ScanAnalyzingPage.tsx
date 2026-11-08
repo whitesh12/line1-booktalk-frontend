@@ -1,7 +1,7 @@
 import { useEffect } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { GoLink, useGo } from '../../lib/nav';
-import { Header } from '../../components/ui';
+import { Header, TabBar } from '../../components/ui';
 
 export function ScanAnalyzingPage() {
   const go = useGo();
@@ -25,6 +25,7 @@ export function ScanAnalyzingPage() {
           <span style={{ fontSize: 15, color: 'var(--text-sub)' }}>배울 표현을 고르는 중이에요</span>
         </div>
       </GoLink>
+      <TabBar />
     </div>
   );
 }

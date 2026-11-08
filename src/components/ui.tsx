@@ -1,5 +1,5 @@
 import type { ReactNode } from 'react';
-import { NavLink } from 'react-router-dom';
+import { useLocation } from 'react-router-dom';
 import type { Motion, WordType } from '../data/content';
 import { useGo } from '../lib/nav';
 
@@ -44,15 +44,30 @@ export function PageTitle({ title, sub, lineHeight }: { title: string; sub?: str
   return <div className="page-title"><h1 style={lineHeight ? { lineHeight } : undefined}>{title}</h1>{sub && <p>{sub}</p>}</div>;
 }
 
-export function TabBar() {
+const TABS = [
+  { to: '/home', label: '홈', icon: Icon.home, match: /^\/home/ },
+  { to: '/books', label: '내 동화책', icon: Icon.book, match: /^\/(books|words|scan)/ },
+  { to: '/settings', label: '내 정보', icon: Icon.user, match: /^\/settings/ },
+];
+
+export function TabBar({ onLeave }: { onLeave?: (leave: () => void) => void }) {
   const go = useGo();
-  const cls = ({ isActive }: { isActive: boolean }) => (isActive ? 'active' : '');
-  const tab = (to: string) => ({ to, className: cls, onClick: (e: React.MouseEvent) => { e.preventDefault(); go(to); } });
+  const { pathname } = useLocation();
   return (
     <nav className="tabbar" aria-label="메뉴">
-      <NavLink {...tab('/home')}>{Icon.home()}홈</NavLink>
-      <NavLink {...tab('/books')}>{Icon.book()}내 동화책</NavLink>
-      <NavLink {...tab('/settings')}>{Icon.user()}내 정보</NavLink>
+      {TABS.map((t) => {
+        const active = t.match.test(pathname);
+        return (
+          <a key={t.to} href={t.to} className={active ? 'active' : undefined} aria-current={active ? 'page' : undefined}
+            onClick={(e) => {
+              e.preventDefault();
+              if (onLeave) onLeave(() => go(t.to));
+              else go(t.to);
+            }}>
+            {t.icon()}{t.label}
+          </a>
+        );
+      })}
     </nav>
   );
 }

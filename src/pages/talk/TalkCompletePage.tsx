@@ -1,5 +1,5 @@
 import { GoLink } from '../../lib/nav';
-import { Header } from '../../components/ui';
+import { Header, TabBar } from '../../components/ui';
 import type { Profile } from '../../store/profile';
 import { useTalk } from './shared';
 
@@ -18,6 +18,7 @@ export function TalkCompletePage({ profile }: { profile: Profile }) {
         </div>
       </div>
       <div className="bottom-bar"><GoLink to={`/books/${book.id}`} className="btn btn-primary">목록으로</GoLink></div>
+      <TabBar />
     </div>
   );
 }

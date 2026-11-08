@@ -1,6 +1,6 @@
 import { useEffect } from 'react';
 import { Navigate, useLocation, useNavigate } from 'react-router-dom';
-import { Header } from '../../components/ui';
+import { Header, TabBar } from '../../components/ui';
 import { checkSentence } from '../../api/client';
 import type { Profile } from '../../store/profile';
 import { DEMO_SENTENCE, LOCAL_CSS, sparkPath, usePracticeWord } from './shared';
@@ -37,6 +37,7 @@ export function PracticeReviewingPage({ profile }: { profile: Profile }) {
           <span style={{ fontSize: 15, color: 'var(--text-sub)' }}>잘한 점과 다듬을 점을 찾는 중이에요</span>
         </div>
       </div>
+      <TabBar />
     </div>
   );
 }

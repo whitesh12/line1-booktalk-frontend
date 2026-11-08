@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { Header, Icon } from '../../components/ui';
+import { Header, Icon, TabBar } from '../../components/ui';
 import { useGo } from '../../lib/nav';
 import { LOCAL_CSS, readDraft, setDraft, usePracticeWord } from './shared';
 
@@ -28,6 +28,7 @@ export function PracticeWritePage() {
       <div className="bottom-bar">
         <button className="btn btn-primary" onClick={() => (text.trim() ? go(`/words/${w.id}/practice/reviewing${qs}`, { state: { sentence: text } }) : document.getElementById('sentence')?.focus())}>완료</button>
       </div>
+      <TabBar />
     </div>
   );
 }

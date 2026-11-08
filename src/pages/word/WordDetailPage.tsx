@@ -1,7 +1,7 @@
 import { Fragment } from 'react';
 import { useParams, useSearchParams } from 'react-router-dom';
 import { GoLink } from '../../lib/nav';
-import { AnimWord, Header, Highlight, Icon, speak } from '../../components/ui';
+import { AnimWord, Header, Highlight, Icon, speak, TabBar } from '../../components/ui';
 import { BOOKS, WORDS, bookById, sceneFor } from '../../data/content';
 import { DETAIL, guideFor, wordVi } from '../../data/wordDetail';
 
@@ -103,9 +103,10 @@ export function WordDetailPage() {
           </section>
         ))}
       </div>
-      <div className="bottom-bar" style={{ background: '#fff', borderTop: '1px solid var(--border)', position: 'sticky', bottom: 0 }}>
+      <div className="bottom-bar" style={{ background: '#fff', borderTop: '1px solid var(--border)', position: 'sticky', bottom: 72 }}>
         <GoLink to={`/words/${w.id}/practice${book ? `?book=${book.id}` : ''}`} className="btn btn-primary">{Icon.pencil()}문장 연습</GoLink>
       </div>
+      <TabBar />
     </div>
   );
 }
