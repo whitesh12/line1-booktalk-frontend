@@ -1,8 +1,8 @@
 import { useEffect, useRef, useState } from 'react';
 import { Link, useNavigate, useParams, useSearchParams } from 'react-router-dom';
 import { Header, Icon, KidMessage } from '../components/ui';
-import { BOOKS, WORDS, bookById } from '../data/content';
-import { MAX_TURNS, openingLine, sendToChild } from '../api/client';
+import { BOOKS, WORDS, bookById, type Word } from '../data/content';
+import { MAX_TURNS, childScript, openingLine, sendToChild, talkFeedbackTips } from '../api/client';
 import type { Profile } from '../store/profile';
 
 function useTalk() {
@@ -40,14 +40,38 @@ export function TalkPrep({ profile }: { profile: Profile }) {
 
 /* F-2 대화 중 · F-4 응답 대기 · F-5 대화 중 피드백 · F-3 대화 완료 */
 type Msg = { from: 'kid'; text: string } | { from: 'me'; text: string } | { from: 'feedback'; tips: string[] };
+type Seed = { msgs: Msg[]; turn: number; waiting: boolean };
+
+/* 시연용 시작 상태 (디자인 F-2 / F-4 / F-5 / F-3의 대화 내용). ?demo=chat|waiting|feedback|done */
+function demoSeed(demo: string | null, w: Word, name: string): Seed {
+  const kid = (text: string): Msg => ({ from: 'kid', text });
+  const me = (text: string): Msg => ({ from: 'me', text });
+  const first = [kid(openingLine()), me(`맞아, 토끼 마음이 ${w.text}했을 것 같아!`), kid(childScript(0))];
+  const wrong = me(`좋아하는 거 보면 마음이 ${w.text}을 해.`);
+  switch (demo) {
+    case 'chat': return { msgs: first, turn: 1, waiting: false };
+    case 'waiting': return { msgs: [...first, wrong], turn: 1, waiting: true };
+    case 'feedback': return { msgs: [...first, wrong, { from: 'feedback', tips: talkFeedbackTips(w) }], turn: 1, waiting: false };
+    case 'done': return {
+      msgs: [...first,
+        me('좋아하는 걸 보면 마음이 자꾸 뛰는 거야. 토끼도 당근을 보고 그랬을 거야.'), kid(childScript(1)),
+        me(`맞아! 그때 ${name}이 마음도 ${w.text}했겠다.`), kid(childScript(2)),
+        me(`토끼가 당근 보고 ${w.text}한 것처럼, ${name}이도 소풍 생각하면 ${w.text}하지?`)],
+      turn: MAX_TURNS, waiting: false,
+    };
+    default: return { msgs: [kid(openingLine())], turn: 0, waiting: false };
+  }
+}
 
 export function TalkChat({ profile }: { profile: Profile }) {
   const { w, qs } = useTalk();
   const nav = useNavigate();
-  const [msgs, setMsgs] = useState<Msg[]>([{ from: 'kid', text: openingLine() }]);
+  const demo = useSearchParams()[0].get('demo');
+  const [seed] = useState(() => demoSeed(demo, w, profile.childName));
+  const [msgs, setMsgs] = useState<Msg[]>(seed.msgs);
   const [text, setText] = useState('');
-  const [waiting, setWaiting] = useState(false);
-  const [turn, setTurn] = useState(0);
+  const [waiting, setWaiting] = useState(seed.waiting);
+  const [turn, setTurn] = useState(seed.turn);
   const done = turn >= MAX_TURNS;
   const end = useRef<HTMLDivElement>(null);
   const stem = w.text.split(' ')[0];
@@ -56,7 +80,8 @@ export function TalkChat({ profile }: { profile: Profile }) {
 
   async function send() {
     const t = text.trim();
-    if (!t || waiting) return;
+    if (waiting) return;
+    if (!t) { document.getElementById('talk-input')?.focus(); return; }
     setText('');
     setMsgs((m) => [...m.filter((x) => x.from !== 'feedback'), { from: 'me', text: t }]);
     setWaiting(true);
@@ -70,8 +95,11 @@ export function TalkChat({ profile }: { profile: Profile }) {
     if (turn + 1 < MAX_TURNS) setMsgs((m) => [...m, { from: 'kid', text: reply.text }]);
   }
 
-  const showHint = msgs.length === 1;
   const retry = msgs.some((m) => m.from === 'feedback');
+  // 도움말: 처음 두 번, 아이가 말하고 내 차례일 때 (디자인 F-2)
+  const showHint = !waiting && !retry && turn < 2 && msgs[msgs.length - 1]?.from === 'kid';
+  // 피드백 바로 앞 내 말은 고칠 부분(단어+조사)까지 강조 (디자인 F-5)
+  const fixIdx = msgs.findIndex((m) => m.from === 'feedback') - 1;
   return (
     <div className="screen" style={{ height: '100dvh' }}>
       <Header title={`‘${w.text}’ 대화 연습`} white to={`/talk/${w.id}${qs}`} />
@@ -80,7 +108,7 @@ export function TalkChat({ profile }: { profile: Profile }) {
           m.from === 'kid' ? (
             <KidMessage key={i} name={profile.childName}><p className="bubble-kid">{m.text}</p></KidMessage>
           ) : m.from === 'me' ? (
-            <p key={i} className="bubble-me">{m.text.split(stem).map((p, j, arr) => <span key={j}>{p}{j < arr.length - 1 && <b>{stem}</b>}</span>)}</p>
+            <p key={i} className="bubble-me">{m.text.split(new RegExp(`(${stem}${i === fixIdx ? '(?:을|를)?' : ''})`)).map((p, j) => (j % 2 ? <b key={j}>{p}</b> : <span key={j}>{p}</span>))}</p>
           ) : (
             <div key={i} style={{ display: 'flex', flexDirection: 'column', gap: 12, marginTop: 6 }}>
               <div className="banner" style={{ gap: 10, borderRadius: 16, padding: '12px 14px', fontSize: 14 }}><span className="dot" style={{ width: 30, height: 30 }}>{Icon.check(16)}</span>의미는 잘 전달됐어요! 표현 하나만 다듬어 볼까요?</div>
@@ -107,10 +135,10 @@ export function TalkChat({ profile }: { profile: Profile }) {
       </div>
       {!done && (
         <form className="composer" onSubmit={(e) => { e.preventDefault(); send(); }}>
-          <input aria-label={retry ? '답변 다시 입력' : '답변 입력'} placeholder={waiting ? '답을 기다리는 중...' : retry ? '다시 답해 보세요' : '여기에 답해 보세요'}
+          <input id="talk-input" aria-label={retry ? '답변 다시 입력' : '답변 입력'} placeholder={waiting ? '답을 기다리는 중...' : retry ? '다시 답해 보세요' : '여기에 답해 보세요'}
             value={text} disabled={waiting} onChange={(e) => setText(e.target.value)} />
           {!waiting && !retry && <button type="button" className="round mic" aria-label="음성 입력">{Icon.mic()}</button>}
-          <button type="submit" className="round send" aria-label="보내기" disabled={waiting || !text.trim()}>{Icon.arrow()}</button>
+          <button type="submit" className="round send" aria-label="보내기" disabled={waiting}>{Icon.arrow()}</button>
         </form>
       )}
     </div>

@@ -1,5 +1,5 @@
 import { useEffect } from 'react';
-import { Link, useNavigate, useParams } from 'react-router-dom';
+import { Link, useNavigate, useParams, useSearchParams } from 'react-router-dom';
 import { AnimWord, Header, Icon, PageTitle, TabBar, TypeTag, speak } from '../components/ui';
 import { BOOKS, WORDS, bookById } from '../data/content';
 
@@ -70,7 +70,13 @@ export function Camera() {
 /* C-3 표현 찾는 중 (백엔드: POST /books/pages/{pageId}/analysis-jobs → GET /analysis-jobs/{jobId} 폴링) */
 export function Extracting() {
   const nav = useNavigate();
-  useEffect(() => { const t = setTimeout(() => nav('/books/rabbit', { replace: true }), 2200); return () => clearTimeout(t); }, [nav]);
+  // 시연용: ?demo=hold 이면 자동으로 넘어가지 않고 이 화면에 머문다 (누르면 C-4)
+  const hold = useSearchParams()[0].get('demo') === 'hold';
+  useEffect(() => {
+    if (hold) return;
+    const t = setTimeout(() => nav('/books/rabbit', { replace: true }), 2200);
+    return () => clearTimeout(t);
+  }, [nav, hold]);
   return (
     <div className="screen">
       <Header title="표현 찾기" back={false} center />

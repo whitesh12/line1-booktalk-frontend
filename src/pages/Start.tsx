@@ -51,16 +51,18 @@ const LANGS: { id: Lang; name: string; ko: string }[] = [
 
 export function Onboarding({ profile, onSave }: { profile: Profile; onSave: (p: Profile) => void }) {
   const nav = useNavigate();
-  const [draft, setDraft] = useState(profile);
+  const [draft, setDraft] = useState(() => (profile.onboarded ? profile : { ...profile, parentName: '', childName: '' }));
   const [saving, setSaving] = useState(false);
   const set = (patch: Partial<Profile>) => setDraft((d) => ({ ...d, ...patch }));
-  const ready = draft.parentName.trim() && draft.childName.trim();
 
   async function next() {
+    // 디자인처럼 버튼은 늘 활성 상태로 두고, 빈 칸이 있으면 그 칸으로 이동한다
+    const empty = !draft.parentName.trim() ? 'parentName' : !draft.childName.trim() ? 'childName' : null;
+    if (empty) { document.getElementById(empty)?.focus(); return; }
     setSaving(true);
     let childId = draft.childId;
     try { childId = (await registerProfile(draft)) ?? childId; } catch { /* 백엔드가 꺼져 있어도 계속 진행 */ }
-    onSave({ ...draft, childId });
+    onSave({ ...draft, childId, onboarded: true });
     nav('/privacy');
   }
 
@@ -104,7 +106,7 @@ export function Onboarding({ profile, onSave }: { profile: Profile; onSave: (p: 
         </div>
       </div>
       <div className="bottom-bar">
-        <button className="btn btn-primary" disabled={!ready || saving} onClick={next}>{saving ? '저장하는 중…' : '다음'}</button>
+        <button className="btn btn-primary" disabled={saving} onClick={next}>{saving ? '저장하는 중…' : '다음'}</button>
       </div>
     </div>
   );

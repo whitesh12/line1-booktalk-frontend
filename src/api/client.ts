@@ -55,6 +55,7 @@ export interface SentenceFeedback {
   suggested?: string;
   wrongPart?: string;
   goodPoint?: string;
+  explain?: string; // 뜻 다시 보기(E-3-1)에서 이 문장에 맞춘 설명. 없으면 단어의 nuance
   tips: string[];
 }
 
@@ -69,6 +70,7 @@ export function mockSentenceFeedback(word: Word, sentence: string): SentenceFeed
     return {
       kind: 'meaning', original: s, wrongPart: word.text,
       goodPoint: '아이가 넘어져서 운 상황을 아주 잘 설명했어요.',
+      explain: '우는 모습이 아니라, 설레거나 긴장해서 마음이 콩콩 뛸 때 써요.',
       tips: ['크게 소리 내어 우는 모양을 나타내는 말은 무엇일까요? 이 그림책에서 함께 배웠어요.',
         '아니면 ‘두근두근’이 어울리는 순간으로 다시 써 봐도 좋아요. 선물을 열기 전처럼요.'],
     };
@@ -109,13 +111,19 @@ export const openingLine = () => OPENERS[0];
 
 const SCRIPT = ['근데 두근두근이 뭐야?', '나도 생일 선물 받을 때 그랬어!', '내일 소풍 가는 것도 두근두근해!'];
 
+export const childScript = (turn: number) => SCRIPT[Math.min(turn, SCRIPT.length - 1)];
+export const talkFeedbackTips = (word: Word) => {
+  const stem = word.text.split(' ')[0];
+  return ['뜻은 정확해요! 상황에 맞는 표현을 잘 골랐어요.', `‘${stem}해’라고 이어서 말하면 더 자연스러워요.`];
+};
+
 export async function sendToChild(word: Word, text: string, turn: number): Promise<ChildReply> {
   await wait(1300);
   const stem = word.text.split(' ')[0];
   const wrong = new RegExp(`${stem}(을|를)\\s*(해|하)`);
   if (wrong.test(text)) {
-    return { text: '응? 다시 말해 줘!', feedback: { tips: ['뜻은 정확해요! 상황에 맞는 표현을 잘 골랐어요.', `‘${stem}해’라고 이어서 말하면 더 자연스러워요.`] } };
+    return { text: '응? 다시 말해 줘!', feedback: { tips: talkFeedbackTips(word) } };
   }
-  return { text: SCRIPT[Math.min(turn, SCRIPT.length - 1)] };
+  return { text: childScript(turn) };
 }
 export const MAX_TURNS = 4;

@@ -41,8 +41,8 @@ export function Header({ title, back = true, white = false, center = false, to }
   );
 }
 
-export function PageTitle({ title, sub }: { title: string; sub?: string }) {
-  return <div className="page-title"><h1>{title}</h1>{sub && <p>{sub}</p>}</div>;
+export function PageTitle({ title, sub, lineHeight }: { title: string; sub?: string; lineHeight?: number }) {
+  return <div className="page-title"><h1 style={lineHeight ? { lineHeight } : undefined}>{title}</h1>{sub && <p>{sub}</p>}</div>;
 }
 
 /* ── 하단 탭 (홈 / 내 동화책 / 내 정보) ── */

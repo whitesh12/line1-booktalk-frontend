@@ -9,6 +9,8 @@
 .mw-twinkle.loop > span, :is(a, button):is(:hover, :active, :focus-visible) .mw-twinkle.hover > span { animation: mwTw 1.7s ease-in-out infinite; }
 .mw-drop.loop > span, :is(a, button):is(:hover, :active, :focus-visible) .mw-drop.hover > span { animation: mwDrop 2.4s cubic-bezier(.5, 0, .5, 1) infinite; }
 .mw-drop.loop::after, :is(a, button):is(:hover, :active, :focus-visible) .mw-drop.hover::after { content: ""; position: absolute; left: 50%; bottom: -.08em; width: 1.6em; height: .35em; margin-left: -.8em; border: 2px solid #E8735A; border-radius: 50%; opacity: 0; animation: mwRip 2.4s ease-out infinite; }
+/* 계속 움직이는 큰 단어(A-1 시작 화면)의 물결은 민트 — Main 디자인 기준. 카드 hover는 코랄(C-4 계열) */
+.mw-drop.loop::after { border-color: #5EC2B2; }
 .mw-sob.loop > span, :is(a, button):is(:hover, :active, :focus-visible) .mw-sob.hover > span { animation: mwSob 1.4s ease-in-out infinite; }
 .mw-hop.loop > span, :is(a, button):is(:hover, :active, :focus-visible) .mw-hop.hover > span { animation: mwHop 1.3s ease-in-out infinite; }
 .mw-tiptoe.loop > span, :is(a, button):is(:hover, :active, :focus-visible) .mw-tiptoe.hover > span { animation: mwTip 2.6s ease-in-out infinite; }

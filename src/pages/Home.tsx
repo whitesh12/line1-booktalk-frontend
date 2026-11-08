@@ -20,7 +20,7 @@ export function Home({ profile }: { profile: Profile }) {
   const recent = ['dugeun', 'pongdang', 'eongeong', 'banjjak'].map((id) => WORDS[id]);
   return (
     <div className="screen">
-      <PageTitle title={`${profile.parentName} 님, 반가워요!`} sub="오늘 읽을 그림책으로 시작해 볼까요?" />
+      <PageTitle title={`${profile.parentName} 님, 반가워요!`} sub="오늘 읽을 그림책으로 시작해 볼까요?" lineHeight={1.35} />
       <div className="content" style={{ paddingTop: 12, minHeight: 0 }}>
         <Link to="/books" className="card" style={{ padding: 0, overflow: 'hidden', textDecoration: 'none', color: 'inherit', borderRadius: 22 }}>
           <div style={{ height: 140, position: 'relative', overflow: 'hidden', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 10,

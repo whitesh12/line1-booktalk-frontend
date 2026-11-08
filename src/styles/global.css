@@ -57,7 +57,7 @@ a { color: var(--primary); }
 .header h1 { margin: 0; font-size: 18px; font-weight: 700; }
 .icon-btn { width: 44px; height: 44px; border: 0; background: none; display: grid; place-items: center; color: var(--text); cursor: pointer; border-radius: 12px; }
 .page-title { padding: 28px 20px 8px; }
-.page-title h1 { margin: 0; font-size: 24px; font-weight: 800; line-height: 1.35; }
+.page-title h1 { margin: 0; font-size: 24px; font-weight: 800; }
 .page-title p { margin: 4px 0 0; font-size: 15px; color: var(--text-sub); }
 
 /* 버튼 */
@@ -119,6 +119,8 @@ a { color: var(--primary); }
 .bubble-kid { margin: 0; background: var(--child-bubble); border-radius: 4px 18px 18px 18px; padding: 11px 14px; font-size: 15px; line-height: 1.55; }
 .bubble-me { margin: 0; align-self: flex-end; max-width: 78%; background: var(--primary); color: #fff; border-radius: 18px 4px 18px 18px; padding: 11px 14px; font-size: 15px; line-height: 1.55; }
 .bubble-me b { color: var(--highlight); }
+/* 디자인 원본은 content-box 기준이라 max-width에 안쪽 여백이 더해짐 → 같은 폭이 되도록 맞춤 */
+.bubble-kid, .bubble-me { box-sizing: content-box; }
 .who { font-size: 12px; color: var(--text-sub); }
 .composer { flex: none; display: flex; align-items: center; gap: 8px; padding: 10px 12px 26px; background: var(--surface); border-top: 1px solid var(--border); }
 .composer input { flex: 1; min-width: 0; height: 48px; border: 1.5px solid var(--input-border); border-radius: 999px; background: var(--bg); padding: 0 18px; font-size: 16px; }

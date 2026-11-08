@@ -1,7 +1,7 @@
 import React from 'react';
 import ReactDOM from 'react-dom/client';
 import { BrowserRouter } from 'react-router-dom';
-import 'pretendard/dist/web/static/pretendard-dynamic-subset.css';
+import './styles/fonts.css';
 import './styles/global.css';
 import './styles/motion.css';
 import App from './App';

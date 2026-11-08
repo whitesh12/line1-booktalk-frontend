@@ -6,7 +6,8 @@ export type Motion =
   | 'beat' | 'drop' | 'sob' | 'twinkle' | 'hop' | 'tiptoe' | 'roll'
   | 'splash' | 'crawl' | 'nod' | 'wave' | 'gulp' | 'struggle' | 'heave' | null;
 
-export interface Similar { text: string; feel: string; when: string; }
+// sample: 문장 피드백(E-4) '이런 표현도 써 보세요'에 보여 줄 예문 · 쓰는 때 (없으면 feel · when)
+export interface Similar { text: string; feel: string; when: string; sample?: string; }
 export interface Word {
   id: string;
   text: string;
@@ -37,8 +38,8 @@ export const WORDS: Record<string, Word> = {
     ],
     examples: ['선물 열기 전엔 마음이 두근두근하지!', '내일 소풍 생각하니 두근두근하다~'],
     similar: [
-      { text: '콩닥콩닥', feel: '작고 귀엽게 뛰어요', when: '아이·작은 동물' },
-      { text: '쿵쾅쿵쾅', feel: '크고 세게 뛰어요', when: '크게 놀랐을 때' },
+      { text: '콩닥콩닥', feel: '작고 귀엽게 뛰어요', when: '아이·작은 동물', sample: '마음이 콩닥콩닥해요 · 작게 설렐 때' },
+      { text: '쿵쾅쿵쾅', feel: '크고 세게 뛰어요', when: '크게 놀랐을 때', sample: '가슴이 쿵쾅쿵쾅해요 · 크게 놀랐을 때' },
     ],
     tip: '아이 손을 가슴에 대고 심장 뛰는 걸 함께 느끼며 “이게 바로 두근두근이야!” 하고 말해 보세요.',
     image: img('dugeun'),

@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react';
 import { Link, Navigate, useLocation, useNavigate, useParams, useSearchParams } from 'react-router-dom';
 import { Header, Highlight, Icon } from '../components/ui';
 import { WORDS } from '../data/content';
-import { checkSentence, type SentenceFeedback } from '../api/client';
+import { checkSentence, mockSentenceFeedback, type SentenceFeedback } from '../api/client';
 import type { Profile } from '../store/profile';
 import { wordVi } from './WordDetail';
 
@@ -18,11 +18,19 @@ const LOCAL_CSS = `
 const sparkPath = 'M12 2C12.8 8.5 15.5 11.2 22 12C15.5 12.8 12.8 15.5 12 22C11.2 15.5 8.5 12.8 2 12C8.5 11.2 11.2 8.5 12 2Z';
 const cardPad = { padding: '16px 18px' } as const;
 
+/* 시연용 예시 문장 (디자인 E-3 / E-3-1 / E-4와 같은 문장). ?demo=polish|meaning|natural */
+const DEMO_SENTENCE: Record<string, string> = {
+  polish: '저는 가슴이 두근두근을 해요.',
+  meaning: '아이가 넘어져서 두근두근 울었어요.',
+  natural: '저는 선물을 열 때 마음이 두근두근해요.',
+};
+
 function useWord() {
   const { wordId = 'dugeun' } = useParams();
   const [q] = useSearchParams();
   const book = q.get('book');
-  return { w: WORDS[wordId] ?? WORDS.dugeun, qs: book ? `?book=${book}` : '' };
+  // demo 값은 다음 화면 링크(qs)로 넘기지 않는다
+  return { w: WORDS[wordId] ?? WORDS.dugeun, qs: book ? `?book=${book}` : '', demo: q.get('demo') };
 }
 
 /* E-1 문장 작성 */
@@ -48,7 +56,8 @@ export function PracticeWrite() {
         <button type="button" className="btn btn-soft" onClick={() => alert('음성 입력은 백엔드 연결 후 POST /speech/transcriptions로 이어집니다.')}>{Icon.mic(18)}마이크로 입력</button>
       </div>
       <div className="bottom-bar">
-        <button className="btn btn-primary" disabled={!text.trim()} onClick={() => nav(`/practice/${w.id}/review${qs}`, { state: { sentence: text } })}>완료</button>
+        {/* 디자인처럼 늘 활성 상태. 비어 있으면 입력칸으로 이동 */}
+        <button className="btn btn-primary" onClick={() => (text.trim() ? nav(`/practice/${w.id}/review${qs}`, { state: { sentence: text } }) : document.getElementById('sentence')?.focus())}>완료</button>
       </div>
     </div>
   );
@@ -56,17 +65,18 @@ export function PracticeWrite() {
 
 /* E-2 AI 검토 중 */
 export function PracticeReview({ profile }: { profile: Profile }) {
-  const { w, qs } = useWord();
+  const { w, qs, demo } = useWord();
   const nav = useNavigate();
-  const sentence = (useLocation().state as { sentence?: string } | null)?.sentence;
+  const hold = demo === 'waiting'; // 시연용: ?demo=waiting 이면 검토 중 화면에 머문다
+  const sentence = (useLocation().state as { sentence?: string } | null)?.sentence ?? (hold ? DEMO_SENTENCE.polish : undefined);
   useEffect(() => {
-    if (!sentence) return;
+    if (!sentence || hold) return;
     let alive = true;
     checkSentence(w, sentence, profile.childId).then((fb) => {
       if (alive) nav(`/practice/${w.id}/feedback${qs}`, { replace: true, state: { fb } });
     });
     return () => { alive = false; };
-  }, [sentence, w, qs, nav, profile.childId]);
+  }, [sentence, hold, w, qs, nav, profile.childId]);
   if (!sentence) return <Navigate to={`/practice/${w.id}${qs}`} replace />;
   return (
     <div className="screen">
@@ -92,8 +102,9 @@ export function PracticeReview({ profile }: { profile: Profile }) {
 
 /* E-3 / E-3-1 / E-4 AI 피드백 */
 export function PracticeFeedback() {
-  const { w, qs } = useWord();
-  const fb = (useLocation().state as { fb?: SentenceFeedback } | null)?.fb;
+  const { w, qs, demo } = useWord();
+  const fb = (useLocation().state as { fb?: SentenceFeedback } | null)?.fb
+    ?? (demo && DEMO_SENTENCE[demo] ? mockSentenceFeedback(w, DEMO_SENTENCE[demo]) : undefined);
   if (!fb) return <Navigate to={`/practice/${w.id}${qs}`} replace />;
 
   const mySentence = (cls?: string) => {
@@ -116,7 +127,7 @@ export function PracticeFeedback() {
             <div className="card" style={{ ...cardPad, display: 'flex', flexDirection: 'column', gap: 10 }}>
               <b style={{ fontSize: 16 }}>이런 표현도 써 보세요</b>
               {w.similar.map((s) => (
-                <div key={s.text} style={{ display: 'flex', alignItems: 'baseline', gap: 10 }}><span style={{ fontWeight: 800, letterSpacing: '-0.02em', fontSize: 19, flex: 'none' }}>{s.text}</span><span style={{ fontSize: 14, color: 'var(--text-body)' }}>{s.feel} · {s.when}</span></div>
+                <div key={s.text} style={{ display: 'flex', alignItems: 'baseline', gap: 10 }}><span style={{ fontWeight: 800, letterSpacing: '-0.02em', fontSize: 19, flex: 'none' }}>{s.text}</span><span style={{ fontSize: 14, color: 'var(--text-body)' }}>{s.sample ?? `${s.feel} · ${s.when}`}</span></div>
               ))}
             </div>
           )}
@@ -154,7 +165,7 @@ export function PracticeFeedback() {
           <div className="card selected" style={{ ...cardPad, display: 'flex', flexDirection: 'column', gap: 6 }}>
             <p className="card-label teal" style={{ margin: 0 }}>‘{w.text}’은 이런 뜻이에요</p>
             <p style={{ margin: 0, fontSize: 16, fontWeight: 700, lineHeight: 1.55 }}>{w.meaning}</p>
-            <p style={{ margin: 0, fontSize: 14, lineHeight: 1.6, color: 'var(--text-body)' }}>{w.nuance}</p>
+            <p style={{ margin: 0, fontSize: 14, lineHeight: 1.6, color: 'var(--text-body)' }}>{fb.explain ?? w.nuance}</p>
             <p style={{ margin: 0, fontSize: 13, color: 'var(--text-sub)' }}>{wordVi(w)}</p>
           </div>
         )}
