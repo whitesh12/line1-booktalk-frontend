@@ -1,3 +1,4 @@
+import { useEffect, useRef, useState } from 'react';
 import { Icon, PageTitle, TabBar, speak } from '../../components/ui';
 import { syncChildLanguage } from '../../api/client';
 import type { Profile } from '../../store/profile';
@@ -21,31 +22,70 @@ const SPEEDS: Option<Profile['speed']>[] = [
 
 interface Option<T extends string> { value: T; label: string; sub: string }
 
-/** 세 가지 중 하나를 고르는 버튼 묶음 (라디오 그룹) */
-function Segmented<T extends string>({ labelledBy, options, value, onChange }: {
+/** 앱 디자인에 맞춘 드롭다운 (listbox). 바깥을 누르거나 Esc 를 누르면 닫힌다. */
+function Dropdown<T extends string>({ labelledBy, options, value, onChange }: {
   labelledBy: string; options: Option<T>[]; value: T; onChange: (v: T) => void;
 }) {
+  const [open, setOpen] = useState(false);
+  const [active, setActive] = useState(0);
+  const root = useRef<HTMLDivElement>(null);
+  const btn = useRef<HTMLButtonElement>(null);
+  const list = useRef<HTMLUListElement>(null);
+  const current = options.find((o) => o.value === value) ?? options[0];
+
+  useEffect(() => {
+    if (!open) return;
+    const close = (e: PointerEvent) => { if (!root.current?.contains(e.target as Node)) setOpen(false); };
+    document.addEventListener('pointerdown', close);
+    list.current?.focus();
+    return () => document.removeEventListener('pointerdown', close);
+  }, [open]);
+
+  const show = () => { setActive(Math.max(0, options.indexOf(current))); setOpen(true); };
+  const pick = (o: Option<T>) => { setOpen(false); btn.current?.focus(); onChange(o.value); };
+  const onKey = (e: React.KeyboardEvent) => {
+    if (e.key === 'ArrowDown') { e.preventDefault(); setActive((i) => (i + 1) % options.length); }
+    else if (e.key === 'ArrowUp') { e.preventDefault(); setActive((i) => (i - 1 + options.length) % options.length); }
+    else if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); pick(options[active]); }
+    else if (e.key === 'Escape' || e.key === 'Tab') { setOpen(false); btn.current?.focus(); }
+  };
+
   return (
-    <div className="segmented" role="radiogroup" aria-labelledby={labelledBy}>
-      {options.map((o) => (
-        <button key={o.value} type="button" role="radio" aria-checked={o.value === value} onClick={() => onChange(o.value)}>
-          <span className="seg-label">{o.label}</span>
-          <span className="seg-sub">{o.sub}</span>
-        </button>
-      ))}
+    <div className="dropdown" ref={root}>
+      <button ref={btn} type="button" className="dropdown-btn" aria-haspopup="listbox" aria-expanded={open}
+        aria-labelledby={`${labelledBy} ${labelledBy}-value`}
+        onClick={() => (open ? setOpen(false) : show())}
+        onKeyDown={(e) => { if (e.key === 'ArrowDown' || e.key === 'ArrowUp') { e.preventDefault(); show(); } }}>
+        <span id={`${labelledBy}-value`}>{current.label}</span>
+        <svg className="dropdown-chevron" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2.4} strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M6 9l6 6 6-6" /></svg>
+      </button>
+      {open && (
+        <ul ref={list} className="dropdown-list" role="listbox" tabIndex={-1} aria-labelledby={labelledBy}
+          aria-activedescendant={`${labelledBy}-opt-${active}`} onKeyDown={onKey}>
+          {options.map((o, i) => (
+            <li key={o.value} id={`${labelledBy}-opt-${i}`} role="option" aria-selected={o.value === value}
+              className={i === active ? 'active' : undefined}
+              onPointerEnter={() => setActive(i)} onClick={() => pick(o)}>
+              <span style={{ display: 'flex', flexDirection: 'column', minWidth: 0 }}>
+                <span className="opt-label">{o.label}</span>
+                <span className="opt-sub">{o.sub}</span>
+              </span>
+              {o.value === value && Icon.check(16, '#1C7A6C')}
+            </li>
+          ))}
+        </ul>
+      )}
     </div>
   );
 }
 
 export function SettingsPage({ profile, onSave }: { profile: Profile; onSave: (p: Profile) => void }) {
   const row = (icon: JSX.Element, id: string, title: string, sub: string, control: JSX.Element) => (
-    <div className="card" style={{ display: 'flex', flexDirection: 'column', gap: 14, padding: 16 }}>
-      <div style={{ display: 'flex', alignItems: 'center', gap: 14 }}>
-        <span style={{ width: 44, height: 44, borderRadius: 14, background: 'var(--mint-soft)', display: 'grid', placeItems: 'center', flex: 'none', color: 'var(--primary)' }}>{icon}</span>
-        <div style={{ flex: 1, minWidth: 0, display: 'flex', flexDirection: 'column', gap: 2 }}>
-          <span id={id} style={{ fontSize: 16, fontWeight: 700 }}>{title}</span>
-          <span style={{ fontSize: 13, color: 'var(--text-sub)' }}>{sub}</span>
-        </div>
+    <div className="card" style={{ display: 'flex', alignItems: 'center', gap: 14, padding: 16 }}>
+      <span style={{ width: 44, height: 44, borderRadius: 14, background: 'var(--mint-soft)', display: 'grid', placeItems: 'center', flex: 'none', color: 'var(--primary)' }}>{icon}</span>
+      <div style={{ flex: 1, minWidth: 0, display: 'flex', flexDirection: 'column', gap: 2 }}>
+        <span id={id} style={{ fontSize: 16, fontWeight: 700 }}>{title}</span>
+        <span style={{ fontSize: 13, color: 'var(--text-sub)', wordBreak: 'keep-all' }}>{sub}</span>
       </div>
       {control}
     </div>
@@ -76,9 +116,9 @@ export function SettingsPage({ profile, onSave }: { profile: Profile; onSave: (p
           <span style={{ marginLeft: 'auto', fontSize: 13, color: 'var(--text-sub)' }}>맞춤형 지원</span>
         </div>
         {row(Icon.translate(), 'lang', '설명 언어 설정', '발음 안내와 뜻풀이 모국어',
-          <Segmented labelledBy="lang" options={LANGS} value={profile.lang} onChange={setLang} />)}
+          <Dropdown labelledBy="lang" options={LANGS} value={profile.lang} onChange={setLang} />)}
         {row(SpeakerWaves, 'speed', '음성 안내 속도', '따라 읽기 좋은 또박또박한 빠르기',
-          <Segmented labelledBy="speed" options={SPEEDS} value={profile.speed} onChange={setSpeed} />)}
+          <Dropdown labelledBy="speed" options={SPEEDS} value={profile.speed} onChange={setSpeed} />)}
       </div>
       <TabBar />
     </div>
