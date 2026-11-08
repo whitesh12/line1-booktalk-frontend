@@ -1,46 +1,8 @@
 import { useState } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
-import { AnimWord, Header, Icon } from '../components/ui';
+import { Header, Icon } from '../components/ui';
 import { registerProfile } from '../api/client';
+import { GoLink, useGo } from '../lib/nav';
 import type { Lang, Profile, Relation } from '../store/profile';
-
-/* 로고 (Logo 기본형: 책 + 말풍선 + 하트) */
-export function BookTalkLogo({ size = 120 }: { size?: number }) {
-  return (
-    <svg width={size} height={size} viewBox="0 0 120 120" role="img" aria-label="아이랑 북토크 로고">
-      <path d="M58 33C47 25.5 31 23.5 19 27.2C15.8 28.2 14 30.6 14 34V77C14 80.6 17.2 82.8 20.6 81.9L22 81.6L19 97L34.5 82.1C43 81.6 51 83.5 58 87.5Z" fill="#1C7A6C" />
-      <path d="M62 33C73 25.5 89 23.5 101 27.2C104.2 28.2 106 30.6 106 34V77C106 80.6 102.8 82.8 99.4 81.9L98 81.6L101 97L85.5 82.1C77 81.6 69 83.5 62 87.5Z" fill="#5EC2B2" />
-      <path d="M25 45H47M25 55.5H42" stroke="#FFFFFF" strokeWidth={4.5} strokeLinecap="round" />
-      <path transform="translate(70.2 35.5) scale(1.15)" d="M12 20.5s-7.5-4.6-7.5-10.2C4.5 7.4 6.6 5.5 9 5.5c1.4 0 2.4.7 3 1.6.6-.9 1.6-1.6 3-1.6 2.4 0 4.5 1.9 4.5 4.8 0 5.6-7.5 10.2-7.5 10.2z" fill="#FFFFFF" />
-    </svg>
-  );
-}
-
-/* A-1 시작 */
-export function Splash() {
-  return (
-    <div className="screen" style={{ padding: '64px 24px 32px' }}>
-      <div className="content center" style={{ gap: 18, padding: 0 }}>
-        <BookTalkLogo />
-        <h1 style={{ margin: '10px 0 0', fontSize: 40, fontWeight: 800, letterSpacing: '-0.02em', lineHeight: 1.2 }}>
-          아이랑 <span style={{ color: 'var(--primary)' }}>북토크</span>
-        </h1>
-        <p style={{ margin: 0, fontSize: 17, lineHeight: 1.65, color: 'var(--text-body)' }}>
-          그림책 속 한국어 표현,<br />
-          <strong style={{ color: 'var(--primary)', fontWeight: 700 }}>쉽게 이해하고</strong> 아이와 함께 말해 봐요
-        </p>
-        <div style={{ marginTop: 28, display: 'flex', gap: 10, justifyContent: 'center', fontWeight: 800, fontSize: 22, letterSpacing: '-0.02em', color: 'var(--text)' }}>
-          {([['두근두근', 'beat'], ['반짝반짝', 'twinkle'], ['퐁당', 'drop']] as const).map(([t, m]) => (
-            <span key={t} style={{ background: '#fff', border: '1px solid var(--border)', borderRadius: 999, padding: '8px 16px' }}>
-              <AnimWord text={t} motion={m} mode="loop" />
-            </span>
-          ))}
-        </div>
-      </div>
-      <Link to="/onboarding" className="btn btn-primary">시작하기 {Icon.arrow()}</Link>
-    </div>
-  );
-}
 
 /* A-2 기본 정보 입력 */
 const LANGS: { id: Lang; name: string; ko: string }[] = [
@@ -50,7 +12,7 @@ const LANGS: { id: Lang; name: string; ko: string }[] = [
 ];
 
 export function Onboarding({ profile, onSave }: { profile: Profile; onSave: (p: Profile) => void }) {
-  const nav = useNavigate();
+  const go = useGo();
   const [draft, setDraft] = useState(() => (profile.onboarded ? profile : { ...profile, parentName: '', childName: '' }));
   const [saving, setSaving] = useState(false);
   const set = (patch: Partial<Profile>) => setDraft((d) => ({ ...d, ...patch }));
@@ -63,12 +25,12 @@ export function Onboarding({ profile, onSave }: { profile: Profile; onSave: (p: 
     let childId = draft.childId;
     try { childId = (await registerProfile(draft)) ?? childId; } catch { /* 백엔드가 꺼져 있어도 계속 진행 */ }
     onSave({ ...draft, childId, onboarded: true });
-    nav('/privacy');
+    go('/privacy');
   }
 
   return (
     <div className="screen">
-      <Header title="기본 정보 입력" to="/" />
+      <Header title="기본 정보 입력" back={false} />
       <div className="content" style={{ gap: 22, paddingBottom: 16 }}>
         <div className="field">
           <label htmlFor="parentName">이름</label>
@@ -138,7 +100,8 @@ export function Privacy() {
           </div>
         ))}
       </div>
-      <div className="bottom-bar"><Link to="/home" className="btn btn-primary">확인했어요</Link></div>
+      {/* 홈으로 갈 때 A-2·A-3 기록을 바꿔치기 → 홈에서 뒤로가기로 설정 화면에 돌아가지 않음 */}
+      <div className="bottom-bar"><GoLink to="/home" className="btn btn-primary">확인했어요</GoLink></div>
     </div>
   );
 }

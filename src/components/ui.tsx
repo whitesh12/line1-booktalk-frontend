@@ -1,6 +1,7 @@
 import type { ReactNode } from 'react';
-import { NavLink, useNavigate } from 'react-router-dom';
+import { NavLink } from 'react-router-dom';
 import type { Motion, WordType } from '../data/content';
+import { useGo } from '../lib/nav';
 
 /* ── 아이콘 (2px 선 아이콘) ── */
 const S = { fill: 'none', stroke: 'currentColor', strokeWidth: 2, strokeLinecap: 'round', strokeLinejoin: 'round' } as const;
@@ -27,14 +28,15 @@ export const Icon = {
 };
 
 /* ── 헤더 ── */
-export function Header({ title, back = true, white = false, center = false, to }: {
-  title: string; back?: boolean; white?: boolean; center?: boolean; to?: string;
+// 뒤로 버튼: to(상위 화면)로 go() 이동 — 브라우저 뒤로가기와 같은 곳. onBack을 주면 그것을 실행.
+export function Header({ title, back = true, white = false, center = false, to, onBack }: {
+  title: string; back?: boolean; white?: boolean; center?: boolean; to?: string; onBack?: () => void;
 }) {
-  const nav = useNavigate();
+  const go = useGo();
   return (
     <header className={`header${white ? ' white' : ''}${center ? ' center' : ''}`}>
-      {back && (
-        <button className="icon-btn" aria-label="뒤로" onClick={() => (to ? nav(to) : nav(-1))}>{Icon.back()}</button>
+      {back && (to || onBack) && (
+        <button className="icon-btn" aria-label="뒤로" onClick={() => (onBack ? onBack() : go(to!))}>{Icon.back()}</button>
       )}
       <h1>{title}</h1>
     </header>
@@ -47,12 +49,14 @@ export function PageTitle({ title, sub, lineHeight }: { title: string; sub?: str
 
 /* ── 하단 탭 (홈 / 내 동화책 / 내 정보) ── */
 export function TabBar() {
+  const go = useGo();
   const cls = ({ isActive }: { isActive: boolean }) => (isActive ? 'active' : '');
+  const tab = (to: string) => ({ to, className: cls, onClick: (e: React.MouseEvent) => { e.preventDefault(); go(to); } });
   return (
     <nav className="tabbar" aria-label="메뉴">
-      <NavLink to="/home" className={cls}>{Icon.home()}홈</NavLink>
-      <NavLink to="/books" className={cls}>{Icon.book()}내 동화책</NavLink>
-      <NavLink to="/me" className={cls}>{Icon.user()}내 정보</NavLink>
+      <NavLink {...tab('/home')}>{Icon.home()}홈</NavLink>
+      <NavLink {...tab('/books')}>{Icon.book()}내 동화책</NavLink>
+      <NavLink {...tab('/me')}>{Icon.user()}내 정보</NavLink>
     </nav>
   );
 }

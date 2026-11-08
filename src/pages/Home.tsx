@@ -1,4 +1,4 @@
-import { Link } from 'react-router-dom';
+import { GoLink } from '../lib/nav';
 import { AnimWord, Icon, PageTitle, TabBar } from '../components/ui';
 import { WORDS } from '../data/content';
 import type { Profile } from '../store/profile';
@@ -22,7 +22,7 @@ export function Home({ profile }: { profile: Profile }) {
     <div className="screen">
       <PageTitle title={`${profile.parentName} 님, 반가워요!`} sub="오늘 읽을 그림책으로 시작해 볼까요?" lineHeight={1.35} />
       <div className="content" style={{ paddingTop: 12, minHeight: 0 }}>
-        <Link to="/books" className="card" style={{ padding: 0, overflow: 'hidden', textDecoration: 'none', color: 'inherit', borderRadius: 22 }}>
+        <GoLink to="/camera" className="card" style={{ padding: 0, overflow: 'hidden', textDecoration: 'none', color: 'inherit', borderRadius: 22 }}>
           <div style={{ height: 140, position: 'relative', overflow: 'hidden', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 10,
             background: 'linear-gradient(160deg, #E9F8F4 0%, #F3FAF8 55%, #FFF7EA 100%)' }}>
             <Sparkle size={18} color="#F6B73C" style={{ top: 22, left: 70 }} />
@@ -43,10 +43,10 @@ export function Home({ profile }: { profile: Profile }) {
             </div>
             <span style={{ color: 'var(--text-sub)' }}>{Icon.chevron()}</span>
           </div>
-        </Link>
+        </GoLink>
 
         <h2 style={{ margin: '8px 0 0', fontSize: 16, fontWeight: 700 }}>이어서 학습하기</h2>
-        <Link to="/practice/dugeun?book=rabbit" className="card" style={{ display: 'flex', alignItems: 'center', gap: 14, padding: '16px 18px', textDecoration: 'none', color: 'inherit' }}>
+        <GoLink to="/practice/dugeun?book=rabbit" className="card" style={{ display: 'flex', alignItems: 'center', gap: 14, padding: '16px 18px', textDecoration: 'none', color: 'inherit' }}>
           <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: 4 }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
               <span style={{ fontWeight: 800, fontSize: 24, letterSpacing: '-0.02em' }}>두근두근</span>
@@ -55,14 +55,14 @@ export function Home({ profile }: { profile: Profile }) {
             <span style={{ fontSize: 13, color: 'var(--text-sub)' }}>마지막 학습 · 어제</span>
           </div>
           <span style={{ color: 'var(--text-sub)' }}>{Icon.chevron()}</span>
-        </Link>
+        </GoLink>
 
         <h2 style={{ margin: '8px 0 0', fontSize: 16, fontWeight: 700 }}>최근 학습한 단어</h2>
         <div className="card" style={{ display: 'flex', flexWrap: 'wrap', gap: 8, padding: 16 }}>
           {recent.map((w) => (
-            <Link key={w.id} to={`/word/${w.id}?book=rabbit`} style={{ background: 'var(--bg)', borderRadius: 999, padding: '6px 14px', fontWeight: 800, fontSize: 19, letterSpacing: '-0.02em', color: 'var(--text)', textDecoration: 'none' }}>
+            <GoLink key={w.id} to={`/word/${w.id}?book=rabbit`} style={{ background: 'var(--bg)', borderRadius: 999, padding: '6px 14px', fontWeight: 800, fontSize: 19, letterSpacing: '-0.02em', color: 'var(--text)', textDecoration: 'none' }}>
               <AnimWord text={w.text} motion={w.motion} />
-            </Link>
+            </GoLink>
           ))}
         </div>
       </div>

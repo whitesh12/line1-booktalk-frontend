@@ -1,5 +1,6 @@
 import { useEffect } from 'react';
-import { Link, useNavigate, useParams, useSearchParams } from 'react-router-dom';
+import { useNavigate, useParams, useSearchParams } from 'react-router-dom';
+import { GoLink, historyIdx, useGo } from '../lib/nav';
 import { AnimWord, Header, Icon, PageTitle, TabBar, TypeTag, speak } from '../components/ui';
 import { BOOKS, WORDS, bookById } from '../data/content';
 
@@ -10,7 +11,7 @@ export function BookList() {
       <PageTitle title="동화책 고르기" sub="책을 고르면 배울 표현이 바로 나와요" />
       <div className="content" style={{ display: 'grid', gridTemplateColumns: 'repeat(2, minmax(0, 1fr))', alignContent: 'start', gap: 14, paddingTop: 14 }}>
         {BOOKS.map((b) => (
-          <Link key={b.id} to={`/books/${b.id}`} className="card" style={{ padding: '10px 10px 14px', display: 'flex', flexDirection: 'column', gap: 10, textDecoration: 'none', color: 'inherit' }}>
+          <GoLink key={b.id} to={`/books/${b.id}`} className="card" style={{ padding: '10px 10px 14px', display: 'flex', flexDirection: 'column', gap: 10, textDecoration: 'none', color: 'inherit' }}>
             <div style={{ height: 176, borderRadius: 14, overflow: 'hidden', background: b.coverBg }}>
               <img src={b.cover} alt={b.coverAlt} style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }} />
             </div>
@@ -18,11 +19,11 @@ export function BookList() {
               <b style={{ fontSize: 15 }}>{b.title}</b>
               <span style={{ fontSize: 13, color: 'var(--text-sub)' }}>표현 {b.wordIds.length}개</span>
             </div>
-          </Link>
+          </GoLink>
         ))}
       </div>
       <div style={{ flex: 'none', padding: '12px 20px 14px', background: 'var(--bg)' }}>
-        <Link to="/camera" className="btn btn-navy" style={{ gap: 10 }}>{Icon.camera()}책 추가하기</Link>
+        <GoLink to="/camera" className="btn btn-navy" style={{ gap: 10 }}>{Icon.camera()}책 추가하기</GoLink>
       </div>
       <TabBar />
     </div>
@@ -32,13 +33,15 @@ export function BookList() {
 /* C-2 촬영 (실제 카메라는 <input type="file" capture>로 연결) */
 export function Camera() {
   const nav = useNavigate();
+  const go = useGo();
   const corner = (pos: React.CSSProperties, sides: string) => (
     <span style={{ position: 'absolute', width: 44, height: 44, ...pos, borderStyle: 'solid', borderColor: 'var(--mint)', borderWidth: 0, ...Object.fromEntries(sides.split(' ').map((s) => [`border${s}Width`, 4])) }} />
   );
   return (
     <div className="screen" style={{ background: '#12151F', color: '#fff' }}>
       <header className="header">
-        <button className="icon-btn" style={{ color: '#fff' }} aria-label="뒤로" onClick={() => nav('/books')}>{Icon.back()}</button>
+        {/* C-2만 예외: 들어온 화면으로 (기록이 없으면 C-1) — 브라우저 뒤로가기와 같음 */}
+        <button className="icon-btn" style={{ color: '#fff' }} aria-label="뒤로" onClick={() => (historyIdx() > 0 ? nav(-1) : go('/books'))}>{Icon.back()}</button>
         <h1>촬영</h1>
       </header>
       <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: 14, padding: '8px 16px 0' }}>
@@ -69,18 +72,19 @@ export function Camera() {
 
 /* C-3 표현 찾는 중 (백엔드: POST /books/pages/{pageId}/analysis-jobs → GET /analysis-jobs/{jobId} 폴링) */
 export function Extracting() {
-  const nav = useNavigate();
+  const go = useGo();
   // 시연용: ?demo=hold 이면 자동으로 넘어가지 않고 이 화면에 머문다 (누르면 C-4)
   const hold = useSearchParams()[0].get('demo') === 'hold';
+  // go()가 C-3·C-2 기록을 되감고 C-4로 간다 → 뒤로가기로 로딩·촬영 화면이 다시 나오지 않음
   useEffect(() => {
     if (hold) return;
-    const t = setTimeout(() => nav('/books/rabbit', { replace: true }), 2200);
+    const t = setTimeout(() => go('/books/rabbit'), 2200);
     return () => clearTimeout(t);
-  }, [nav, hold]);
+  }, [go, hold]);
   return (
     <div className="screen">
       <Header title="표현 찾기" back={false} center />
-      <Link to="/books/rabbit" replace aria-label="표현 찾기 완료, 단어 카드 보기" className="content center" style={{ gap: 22, padding: '0 0 80px', textDecoration: 'none', color: 'var(--text)' }}>
+      <GoLink to="/books/rabbit" aria-label="표현 찾기 완료, 단어 카드 보기" className="content center" style={{ gap: 22, padding: '0 0 80px', textDecoration: 'none', color: 'var(--text)' }}>
         <div style={{ width: 148, height: 148, borderRadius: 44, background: 'var(--mint-soft)', display: 'grid', placeItems: 'center' }}>
           {/* 디자인: 글자 간격 0.15s로 깡충 (AnimWord 기본 0.13s와 달라 직접 나눔) */}
           <span className="mw mw-hop loop" aria-hidden="true" style={{ fontSize: 40, fontWeight: 800, color: 'var(--primary)', letterSpacing: 4 }}>
@@ -91,7 +95,7 @@ export function Extracting() {
           <b style={{ fontSize: 20 }}>글을 읽고 있어요</b>
           <span style={{ fontSize: 15, color: 'var(--text-sub)' }}>배울 표현을 고르는 중이에요</span>
         </div>
-      </Link>
+      </GoLink>
     </div>
   );
 }
@@ -112,7 +116,7 @@ export function WordList() {
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, minmax(0, 1fr))', gap: 12 }}>
           {words.map((w) => (
             <div key={w.id} style={{ position: 'relative' }}>
-              <Link to={`/word/${w.id}?book=${book.id}`} className="card" style={{ padding: '10px 10px 14px', display: 'flex', flexDirection: 'column', gap: 8, textDecoration: 'none', color: 'inherit', height: '100%' }}>
+              <GoLink to={`/word/${w.id}?book=${book.id}`} className="card" style={{ padding: '10px 10px 14px', display: 'flex', flexDirection: 'column', gap: 8, textDecoration: 'none', color: 'inherit', height: '100%' }}>
                 <div style={{ position: 'relative', height: 80, borderRadius: 14, overflow: 'hidden', background: 'var(--bg)' }}>
                   <img src={w.image} alt={`${w.text} 그림`} style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }} />
                   <TypeTag type={w.type} style={{ position: 'absolute', top: 6, left: 6, boxShadow: '0 1px 4px rgba(0,0,0,.12)' }} />
@@ -127,7 +131,7 @@ export function WordList() {
                   <span style={{ fontSize: 13, fontWeight: 500, lineHeight: 1.45 }}>{w.meaning}</span>
                   <span style={{ fontSize: 12, color: 'var(--text-sub)' }}>{w.vi}</span>
                 </div>
-              </Link>
+              </GoLink>
               <button aria-label={`${w.text} 듣기`} onClick={() => speak(w.text)}
                 style={{ position: 'absolute', top: 99, right: 15, width: 28, height: 28, padding: 0, borderRadius: '50%', border: 0, background: 'var(--mint-soft)', color: 'var(--primary)', display: 'grid', placeItems: 'center', cursor: 'pointer' }}>
                 <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2.2} strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M4 9v6h4l5 4V5L8 9H4z" /><path d="M16.5 8.5a5 5 0 010 7" /></svg>

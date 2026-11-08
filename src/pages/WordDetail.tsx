@@ -1,5 +1,6 @@
 import { Fragment } from 'react';
-import { Link, useParams, useSearchParams } from 'react-router-dom';
+import { useParams, useSearchParams } from 'react-router-dom';
+import { GoLink } from '../lib/nav';
 import { AnimWord, Header, Highlight, Icon, speak } from '../components/ui';
 import { BOOKS, WORDS, bookById, sceneFor, type Word } from '../data/content';
 
@@ -138,7 +139,7 @@ export function WordDetail() {
         ))}
       </div>
       <div className="bottom-bar" style={{ background: '#fff', borderTop: '1px solid var(--border)', position: 'sticky', bottom: 0 }}>
-        <Link to={`/practice/${w.id}${book ? `?book=${book.id}` : ''}`} className="btn btn-primary">{Icon.pencil()}문장 연습</Link>
+        <GoLink to={`/practice/${w.id}${book ? `?book=${book.id}` : ''}`} className="btn btn-primary">{Icon.pencil()}문장 연습</GoLink>
       </div>
     </div>
   );

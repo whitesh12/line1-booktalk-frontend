@@ -1,15 +1,16 @@
 import React from 'react';
 import ReactDOM from 'react-dom/client';
-import { BrowserRouter } from 'react-router-dom';
+import { RouterProvider, createBrowserRouter } from 'react-router-dom';
 import './styles/fonts.css';
 import './styles/global.css';
 import './styles/motion.css';
 import App from './App';
 
+// data router: F-2 대화 중 뒤로가기 확인 창(useBlocker)에 필요. 화면 경로는 App 안의 <Routes>에 있다.
+const router = createBrowserRouter([{ path: '*', element: <App /> }]);
+
 ReactDOM.createRoot(document.getElementById('root')!).render(
   <React.StrictMode>
-    <BrowserRouter>
-      <App />
-    </BrowserRouter>
+    <RouterProvider router={router} />
   </React.StrictMode>,
 );

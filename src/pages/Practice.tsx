@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
-import { Link, Navigate, useLocation, useNavigate, useParams, useSearchParams } from 'react-router-dom';
+import { Navigate, useLocation, useNavigate, useParams, useSearchParams } from 'react-router-dom';
 import { Header, Highlight, Icon } from '../components/ui';
+import { GoLink, bookFor, useGo } from '../lib/nav';
 import { WORDS } from '../data/content';
 import { checkSentence, mockSentenceFeedback, type SentenceFeedback } from '../api/client';
 import type { Profile } from '../store/profile';
@@ -28,16 +29,26 @@ const DEMO_SENTENCE: Record<string, string> = {
 function useWord() {
   const { wordId = 'dugeun' } = useParams();
   const [q] = useSearchParams();
-  const book = q.get('book');
-  // demo 값은 다음 화면 링크(qs)로 넘기지 않는다
-  return { w: WORDS[wordId] ?? WORDS.dugeun, qs: book ? `?book=${book}` : '', demo: q.get('demo') };
+  const w = WORDS[wordId] ?? WORDS.dugeun;
+  // 어느 책에서 왔는지(book)를 D-1 → E → F → F-6까지 계속 넘긴다. demo 값은 넘기지 않는다
+  return { w, qs: `?book=${bookFor(w.id, q.get('book')).id}`, demo: q.get('demo') };
 }
+
+/* E-3·E-3-1 '다시 써 보기'로 E-1에 돌아갈 때 방금 쓴 문장을 입력칸에 채워 둔다 */
+const DRAFT_KEY = 'booktalk.draft';
+const setDraft = (wordId: string, text: string | null) => {
+  try { if (text === null) sessionStorage.removeItem(DRAFT_KEY); else sessionStorage.setItem(DRAFT_KEY, JSON.stringify({ wordId, text })); } catch { /* 없어도 동작 */ }
+};
+const readDraft = (wordId: string): string => {
+  try { const d = JSON.parse(sessionStorage.getItem(DRAFT_KEY) ?? 'null'); return d?.wordId === wordId ? d.text : ''; } catch { return ''; }
+};
 
 /* E-1 문장 작성 */
 export function PracticeWrite() {
   const { w, qs } = useWord();
-  const nav = useNavigate();
-  const [text, setText] = useState('');
+  const go = useGo();
+  const [text, setText] = useState(() => readDraft(w.id));
+  useEffect(() => setDraft(w.id, null), [w.id]); // 한 번 채우고 나면 지운다
   const josa = /[가-힣]$/.test(w.text) && (w.text.charCodeAt(w.text.length - 1) - 0xac00) % 28 ? '을' : '를';
   return (
     <div className="screen">
@@ -57,7 +68,7 @@ export function PracticeWrite() {
       </div>
       <div className="bottom-bar">
         {/* 디자인처럼 늘 활성 상태. 비어 있으면 입력칸으로 이동 */}
-        <button className="btn btn-primary" onClick={() => (text.trim() ? nav(`/practice/${w.id}/review${qs}`, { state: { sentence: text } }) : document.getElementById('sentence')?.focus())}>완료</button>
+        <button className="btn btn-primary" onClick={() => (text.trim() ? go(`/practice/${w.id}/review${qs}`, { state: { sentence: text } }) : document.getElementById('sentence')?.focus())}>완료</button>
       </div>
     </div>
   );
@@ -133,8 +144,8 @@ export function PracticeFeedback() {
           )}
         </div>
         <div className="bottom-bar">
-          <Link to={`/practice/${w.id}${qs}`} className="btn btn-outline" style={{ fontSize: 16 }}>한번 더 연습</Link>
-          <Link to={`/talk/${w.id}${qs}`} className="btn btn-primary" style={{ fontSize: 16 }}>대화 연습</Link>
+          <GoLink to={`/practice/${w.id}${qs}`} onClick={() => setDraft(w.id, null)} className="btn btn-outline" style={{ fontSize: 16 }}>한번 더 연습</GoLink>
+          <GoLink to={`/talk/${w.id}${qs}`} className="btn btn-primary" style={{ fontSize: 16 }}>대화 연습</GoLink>
         </div>
       </div>
     );
@@ -178,8 +189,8 @@ export function PracticeFeedback() {
         </div>
       </div>
       <div className="bottom-bar">
-        {meaning && <Link to={`/word/${w.id}${qs}`} className="btn btn-outline" style={{ fontSize: 16 }}>뜻 다시 보기</Link>}
-        <Link to={`/practice/${w.id}${qs}`} className="btn btn-primary" style={meaning ? { fontSize: 16 } : undefined}>{Icon.pencil(meaning ? 18 : 20)}다시 써 보기</Link>
+        {meaning && <GoLink to={`/word/${w.id}${qs}`} className="btn btn-outline" style={{ fontSize: 16 }}>뜻 다시 보기</GoLink>}
+        <GoLink to={`/practice/${w.id}${qs}`} onClick={() => setDraft(w.id, fb.original)} className="btn btn-primary" style={meaning ? { fontSize: 16 } : undefined}>{Icon.pencil(meaning ? 18 : 20)}다시 써 보기</GoLink>
       </div>
     </div>
   );

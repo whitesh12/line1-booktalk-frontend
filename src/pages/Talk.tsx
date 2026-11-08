@@ -1,15 +1,17 @@
 import { useEffect, useRef, useState } from 'react';
-import { Link, useNavigate, useParams, useSearchParams } from 'react-router-dom';
+import { useBlocker, useParams, useSearchParams } from 'react-router-dom';
 import { Header, Icon, KidMessage } from '../components/ui';
-import { BOOKS, WORDS, bookById, type Word } from '../data/content';
+import { WORDS, type Word } from '../data/content';
+import { GoLink, bookFor, isIntentionalNav, useGo } from '../lib/nav';
 import { MAX_TURNS, childScript, openingLine, sendToChild, talkFeedbackTips } from '../api/client';
 import type { Profile } from '../store/profile';
 
 function useTalk() {
   const { wordId = 'dugeun' } = useParams();
   const [q] = useSearchParams();
-  const book = bookById(q.get('book') ?? undefined) ?? BOOKS[0];
-  return { w: WORDS[wordId] ?? WORDS.dugeun, book, qs: `?book=${book.id}` };
+  const w = WORDS[wordId] ?? WORDS.dugeun;
+  const book = bookFor(w.id, q.get('book')); // 들어온 책을 F-6 '목록으로'까지 넘긴다
+  return { w, book, qs: `?book=${book.id}` };
 }
 
 /* F-1 대화 연습 준비 */
@@ -17,7 +19,7 @@ export function TalkPrep({ profile }: { profile: Profile }) {
   const { w, book, qs } = useTalk();
   return (
     <div className="screen">
-      <Header title="아이와 대화 연습" />
+      <Header title="아이와 대화 연습" to={`/word/${w.id}${qs}`} />
       <div className="content" style={{ gap: 16, paddingBottom: 16 }}>
         <div className="card" style={{ display: 'flex', alignItems: 'center', gap: 16, borderRadius: 24, padding: 20 }}>
           <span className="avatar" style={{ width: 84, height: 84, fontSize: 34 }} aria-hidden="true">{profile.childName.slice(0, 1)}</span>
@@ -33,7 +35,7 @@ export function TalkPrep({ profile }: { profile: Profile }) {
           <p style={{ margin: 0, fontSize: 18, fontWeight: 700, lineHeight: 1.5 }}>을(를) 넣어 아이에게 질문해 보기</p>
         </div>
       </div>
-      <div className="bottom-bar"><Link to={`/talk/${w.id}/chat${qs}`} className="btn btn-primary">{Icon.chat()}대화 시작하기</Link></div>
+      <div className="bottom-bar"><GoLink to={`/talk/${w.id}/chat${qs}`} className="btn btn-primary">{Icon.chat()}대화 시작하기</GoLink></div>
     </div>
   );
 }
@@ -65,7 +67,7 @@ function demoSeed(demo: string | null, w: Word, name: string): Seed {
 
 export function TalkChat({ profile }: { profile: Profile }) {
   const { w, qs } = useTalk();
-  const nav = useNavigate();
+  const go = useGo();
   const demo = useSearchParams()[0].get('demo');
   const [seed] = useState(() => demoSeed(demo, w, profile.childName));
   const [msgs, setMsgs] = useState<Msg[]>(seed.msgs);
@@ -100,9 +102,32 @@ export function TalkChat({ profile }: { profile: Profile }) {
   const showHint = !waiting && !retry && turn < 2 && msgs[msgs.length - 1]?.from === 'kid';
   // 피드백 바로 앞 내 말은 고칠 부분(단어+조사)까지 강조 (디자인 F-5)
   const fixIdx = msgs.findIndex((m) => m.from === 'feedback') - 1;
+
+  // 대화 중(F-2~F-5)에 나가려 하면 '대화를 그만할까요?' 확인 → F-1.
+  // 화면 속 뒤로 버튼과 브라우저·휴대폰 뒤로가기 모두. 대화를 마친 뒤(F-3)에는 묻지 않는다.
+  const prep = `/talk/${w.id}${qs}`;
+  const blocker = useBlocker(({ currentLocation, nextLocation }) =>
+    !done && !isIntentionalNav() && currentLocation.pathname !== nextLocation.pathname);
+  const [ask, setAsk] = useState(false);
+  const asking = ask || blocker.state === 'blocked';
+  const stay = () => { setAsk(false); if (blocker.state === 'blocked') blocker.reset(); };
+  const leave = () => { setAsk(false); if (blocker.state === 'blocked') blocker.proceed(); else go(prep); };
+
   return (
     <div className="screen" style={{ height: '100dvh' }}>
-      <Header title={`‘${w.text}’ 대화 연습`} white to={`/talk/${w.id}${qs}`} />
+      <Header title={`‘${w.text}’ 대화 연습`} white onBack={() => (done ? go(prep) : setAsk(true))} />
+      {asking && (
+        <div role="dialog" aria-modal="true" aria-labelledby="quit-title" style={{ position: 'fixed', inset: 0, zIndex: 10, background: 'rgba(29, 36, 51, .45)', display: 'grid', placeItems: 'center', padding: 24 }}>
+          <div style={{ width: '100%', maxWidth: 340, background: '#fff', borderRadius: 20, padding: '24px 20px 20px', display: 'flex', flexDirection: 'column', gap: 8, textAlign: 'center' }}>
+            <b id="quit-title" style={{ fontSize: 18 }}>대화를 그만할까요?</b>
+            <span style={{ fontSize: 14, lineHeight: 1.5, color: 'var(--text-sub)' }}>지금까지 나눈 대화는 저장되지 않아요.</span>
+            <div style={{ display: 'flex', gap: 10, marginTop: 12 }}>
+              <button type="button" className="btn btn-outline" style={{ height: 48, fontSize: 16 }} onClick={stay} autoFocus>계속하기</button>
+              <button type="button" className="btn btn-primary" style={{ height: 48, fontSize: 16 }} onClick={leave}>그만하기</button>
+            </div>
+          </div>
+        </div>
+      )}
       <div className={`chat${done ? ' done' : ''}`} aria-live="polite">
         {msgs.map((m, i) =>
           m.from === 'kid' ? (
@@ -124,7 +149,7 @@ export function TalkChat({ profile }: { profile: Profile }) {
           </div>
         )}
         {done && (
-          <button onClick={() => nav(`/talk/${w.id}/done${qs}`)} aria-label="대화를 모두 마쳤어요. 누르면 마무리 화면" style={{ marginTop: 8, width: '100%', padding: 0, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 8, background: 'none', border: 0, color: 'var(--text)', cursor: 'pointer' }}>
+          <button onClick={() => go(`/talk/${w.id}/done${qs}`)} aria-label="대화를 모두 마쳤어요. 누르면 마무리 화면" style={{ marginTop: 8, width: '100%', padding: 0, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 8, background: 'none', border: 0, color: 'var(--text)', cursor: 'pointer' }}>
             <span style={{ display: 'flex', alignItems: 'center', gap: 10, width: '100%' }}>
               <span style={{ flex: 1, height: 1, background: 'var(--border)' }} /><b style={{ fontSize: 15 }}>대화를 모두 마쳤어요</b><span style={{ flex: 1, height: 1, background: 'var(--border)' }} />
             </span>
@@ -160,7 +185,7 @@ export function TalkDone({ profile }: { profile: Profile }) {
           <span style={{ fontSize: 16, lineHeight: 1.6, color: 'var(--text-body)' }}>오늘 배운 표현으로<br />{profile.childName}이와 끝까지 이야기했어요</span>
         </div>
       </div>
-      <div className="bottom-bar"><Link to={`/books/${book.id}`} className="btn btn-primary">목록으로</Link></div>
+      <div className="bottom-bar"><GoLink to={`/books/${book.id}`} className="btn btn-primary">목록으로</GoLink></div>
     </div>
   );
 }
