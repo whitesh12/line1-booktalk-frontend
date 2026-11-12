@@ -61,7 +61,7 @@ npm run build      # dist/ 생성
 
 ## 백엔드 연결
 `.env.example`을 `.env`로 복사하고 `VITE_API_BASE_URL=/v1`로 바꾸면, `npm run dev`가 `/v1` 요청을 `localhost:8080`(docker-compose의 backend)으로 넘깁니다.
-- 연결됨: 기본 정보 입력 → `POST /auth/guest`, `POST /children` (토큰 만료 시 `POST /auth/refresh` 후 1회 재시도)
+- 연결됨: 기본 정보 입력 → `POST /auth/guest`, `GET /children` → 있으면 `PATCH /children/{id}`, 없으면 `POST /children` (계정당 아이 5명 제한이 있어 재입력 시 새로 만들지 않음. 토큰 만료 시 `POST /auth/refresh` 후 1회 재시도)
 - 연결됨: 촬영 → `POST /books/uploads` → `POST /books/pages/{pageId}/analysis-jobs` → `GET /analysis-jobs/{jobId}` 폴링 → `GET /books/pages/{pageId}/analysis`
   - 결과는 `/books/scan`(내가 찍은 그림책)에 표시되고 새로고침해도 남아 있어요. 내장 단어와 글자가 같으면 내장 카드를 그대로 써요.
   - 백엔드가 재시작되어(H2 메모리 DB) 계정이 사라졌으면 게스트 로그인·아이 등록을 다시 하고 재시도해요.
@@ -71,3 +71,10 @@ npm run build      # dist/ 생성
 명세서와 실제 백엔드 코드가 다른 부분은 코드 기준으로 맞췄어요: 관계는 `MOTHER|FATHER|GUARDIAN`, 언어는 `vi|zh-CN|en`, 문장 연습 `inputMethod`는 `KEYBOARD|SPEECH`.
 
 비워 두면 모든 화면이 모의 응답으로 동작해서 백엔드 없이 시연할 수 있어요.
+
+### 배포할 때 체크리스트
+- 배포 환경 변수 `VITE_API_BASE_URL=https://백엔드주소/v1` (끝에 `/v1` 필수). 빌드할 때 들어가므로 바꾸면 다시 빌드해야 해요.
+- 프론트가 https 면 백엔드도 https 여야 해요 (http 면 브라우저가 막아요).
+- 백엔드 `application.yml`의 `app.cors.allowed-origins`에 프론트 배포 주소를 넣어야 해요 (끝에 `/` 없이, 예: `https://xxx.netlify.app`).
+- `public/_redirects`(Netlify) 덕분에 `/books/scan` 같은 주소에서 새로고침해도 화면이 떠요.
+- 요청 제한 시간은 60초(무료 서버가 깨어나는 시간 고려), 기본 정보 입력은 서버가 느리면 8초 뒤 넘어가고 첫 촬영 때 등록을 마저 해요.

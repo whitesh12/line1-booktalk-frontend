@@ -2,8 +2,24 @@ import type { Profile } from '../store/profile';
 import type { Word } from '../data/content';
 import { serverVocabId, type ScanExpression } from '../data/scanned';
 
-const BASE = (import.meta.env.VITE_API_BASE_URL as string | undefined)?.replace(/\/$/, '') ?? '';
+const BASE = ((import.meta.env.VITE_API_BASE_URL as string | undefined) ?? '').trim().replace(/\/+$/, '');
 export const USE_MOCK = BASE === '';
+// 백엔드는 context-path 가 /v1 이라 주소 끝에 /v1 이 꼭 있어야 한다.
+if (!USE_MOCK && !BASE.endsWith('/v1')) console.warn(`[api] VITE_API_BASE_URL(${BASE}) 끝에 /v1 이 없어요. 예: https://서버주소/v1`);
+
+/** 일반 요청 제한 시간. 무료 서버가 잠에서 깨는 데 30~60초 걸릴 수 있어 넉넉히 둔다. */
+const TIMEOUT_MS = 60_000;
+
+/** crypto.randomUUID 는 HTTPS(또는 localhost)에서만 있어서, 휴대폰으로 http://192.168… 접속할 때를 대비한다. */
+export function uuid(): string {
+  if (typeof crypto !== 'undefined' && typeof crypto.randomUUID === 'function') return crypto.randomUUID();
+  const b = new Uint8Array(16);
+  crypto.getRandomValues(b);
+  b[6] = (b[6] & 0x0f) | 0x40;
+  b[8] = (b[8] & 0x3f) | 0x80;
+  const h = [...b].map((x) => x.toString(16).padStart(2, '0')).join('');
+  return `${h.slice(0, 8)}-${h.slice(8, 12)}-${h.slice(12, 16)}-${h.slice(16, 20)}-${h.slice(20)}`;
+}
 
 const TOKEN_KEY = 'booktalk.token';
 const REFRESH_KEY = 'booktalk.refresh';
@@ -53,42 +69,72 @@ async function request<T>(path: string, init: RequestInit = {}, noRetry = false)
   const token = store.get(TOKEN_KEY);
   if (token) headers.set('Authorization', `Bearer ${token}`);
 
+  // 호출한 쪽의 취소(화면 이탈)와 제한 시간을 함께 건다.
+  const ctrl = new AbortController();
+  let timedOut = false;
+  const timer = setTimeout(() => { timedOut = true; ctrl.abort(); }, TIMEOUT_MS);
+  const outer = init.signal;
+  const onOuterAbort = () => ctrl.abort();
+  if (outer?.aborted) ctrl.abort(); else outer?.addEventListener('abort', onOuterAbort, { once: true });
+
   let res: Response;
+  let body: { data?: T; error?: { code?: string; message?: string; retryable?: boolean } } | null;
   try {
-    res = await fetch(`${BASE}${path}`, { ...init, headers });
-  } catch {
-    throw new ApiError(0, 'NETWORK_ERROR', '서버에 연결하지 못했어요. 잠시 후 다시 시도해 주세요.', true);
+    res = await fetch(`${BASE}${path}`, { ...init, headers, signal: ctrl.signal });
+    body = await res.json().catch(() => null);
+  } catch (e) {
+    if (outer?.aborted) throw e; // 화면을 벗어나 취소된 경우는 그대로 넘긴다
+    throw timedOut
+      ? new ApiError(408, 'TIMEOUT', '서버 응답이 늦어요. 잠시 후 다시 시도해 주세요.', true)
+      : new ApiError(0, 'NETWORK_ERROR', '서버에 연결하지 못했어요. 잠시 후 다시 시도해 주세요.', true);
+  } finally {
+    clearTimeout(timer);
+    outer?.removeEventListener('abort', onOuterAbort);
   }
+
   // 401: 토큰 갱신 후 1회만 재시도
   if (res.status === 401 && !noRetry && (await refreshTokens())) return request<T>(path, init, true);
 
-  const body = await res.json().catch(() => null);
   if (!res.ok || body?.error) {
     const e = body?.error;
     throw new ApiError(res.status, e?.code ?? 'UNKNOWN', e?.message ?? `요청에 실패했어요 (${res.status})`, !!e?.retryable);
   }
-  return body?.data as T;
+  // 주소가 틀려서 백엔드 대신 웹 페이지(HTML)가 돌아온 경우 등
+  if (!body || !('data' in body)) {
+    throw new ApiError(res.status, 'BAD_RESPONSE', '서버 주소 설정을 확인해 주세요. (API 응답이 아니에요)');
+  }
+  return body.data as T;
 }
 
 const RELATION = { 엄마: 'MOTHER', 아빠: 'FATHER', 보호자: 'GUARDIAN' } as const;
 // 백엔드 Language enum 은 소문자 코드(vi, zh-CN, en)로 받는다.
 const LANGUAGE = { vi: 'vi', zh: 'zh-CN', en: 'en' } as const;
 
+/**
+ * 게스트 로그인 후 아이 프로필을 서버에 맞춘다.
+ * 같은 기기(deviceId)는 같은 계정으로 로그인되고 계정당 아이는 최대 5명이라,
+ * 이미 등록된 아이가 있으면 새로 만들지 않고 그 아이 정보를 고쳐서 쓴다.
+ */
 export async function registerProfile(p: Profile): Promise<string | undefined> {
   if (USE_MOCK) return undefined;
   let deviceId = store.get(DEVICE_KEY);
-  if (!deviceId) { deviceId = crypto.randomUUID(); store.set(DEVICE_KEY, deviceId); }
+  if (!deviceId) { deviceId = uuid(); store.set(DEVICE_KEY, deviceId); }
   const auth = await request<{ accessToken: string; refreshToken: string }>('/auth/guest', {
     method: 'POST', body: JSON.stringify({ deviceId, locale: 'ko' }),
   }, true);
   saveTokens(auth);
-  const child = await request<{ id: string }>('/children', {
-    method: 'POST',
-    body: JSON.stringify({
-      nickname: p.childName, age: p.childAge,
-      relationship: RELATION[p.relation], explanationLanguage: LANGUAGE[p.lang],
-    }),
+
+  const body = JSON.stringify({
+    nickname: p.childName.trim().slice(0, 20), age: Math.min(7, Math.max(3, p.childAge)),
+    relationship: RELATION[p.relation], explanationLanguage: LANGUAGE[p.lang],
   });
+  const children = await request<{ id: string }[]>('/children');
+  const existing = children.find((c) => c.id === p.childId) ?? children[0];
+  if (existing) {
+    await request(`/children/${existing.id}`, { method: 'PATCH', body });
+    return existing.id;
+  }
+  const child = await request<{ id: string }>('/children', { method: 'POST', body });
   return child.id;
 }
 
@@ -151,7 +197,13 @@ export async function checkSentence(word: Word, sentence: string, childId?: stri
     );
     const kind: FeedbackKind = !r.targetWordUsed ? 'missing' : !r.meaningDelivered ? 'meaning'
       : r.suggestedSentence && r.suggestedSentence !== r.originalSentence ? 'polish' : 'natural';
-    return { kind, original: r.originalSentence, suggested: r.suggestedSentence, wrongPart: r.highlights?.[0]?.text, tips: [r.feedback] };
+    // 서버 highlights 는 "두근두근을/를 해요" 같은 설명 문구라 문장 안에 그대로 없다.
+    // 문장에서 실제로 고칠 부분(예: "두근두근을")을 찾아 밑줄 칠 곳으로 쓴다.
+    const stem = word.text.split(' ')[0];
+    const found = r.originalSentence.match(new RegExp(`${stem}(을|를|이|가)`))?.[0];
+    const hl = r.highlights?.[0]?.text;
+    const wrongPart = found ?? (hl && r.originalSentence.includes(hl) ? hl : undefined);
+    return { kind, original: r.originalSentence, suggested: r.suggestedSentence, wrongPart, tips: [r.feedback] };
   } catch (e) {
     console.warn('[sentence-practices] 서버 첨삭 실패, 예시 응답으로 대신합니다', e);
     return { ...mockSentenceFeedback(word, sentence), fallback: true };
@@ -229,7 +281,8 @@ export async function analyzePhoto(file: File, childId: string, signal: AbortSig
     status = j.status;
     delay = j.pollAfterMs || 1000;
     onProgress?.(j.progress);
-    if (status === 'FAILED' || status === 'CANCELLED') {
+    // 끝난 상태는 COMPLETED 말고도 FAILED, REJECTED, CANCELLED 가 있다.
+    if (status !== 'QUEUED' && status !== 'RUNNING' && status !== 'COMPLETED') {
       throw new ApiError(422, j.errorCode ?? 'ANALYSIS_FAILED', j.errorMessage ?? '글자를 읽지 못했어요. 다시 찍어 주세요.');
     }
   }

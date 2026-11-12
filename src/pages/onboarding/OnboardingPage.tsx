@@ -21,7 +21,10 @@ export function OnboardingPage({ profile, onSave }: { profile: Profile; onSave: 
     if (empty) { document.getElementById(empty)?.focus(); return; }
     setSaving(true);
     let childId = draft.childId;
-    try { childId = (await registerProfile(draft)) ?? childId; } catch {}
+    // 서버가 느리면(무료 서버 깨어나는 중 등) 8초까지만 기다리고 넘어간다.
+    // 못 받은 childId 는 첫 촬영 때 다시 맞춘다 (이미 등록된 아이가 있으면 그 아이를 쓴다).
+    const timeout = new Promise<undefined>((r) => setTimeout(() => r(undefined), 8000));
+    try { childId = (await Promise.race([registerProfile(draft), timeout])) ?? childId; } catch {}
     onSave({ ...draft, childId, onboarded: true });
     go('/onboarding/privacy');
   }
@@ -44,7 +47,7 @@ export function OnboardingPage({ profile, onSave }: { profile: Profile; onSave: 
         </div>
         <div className="field">
           <label htmlFor="childName">아이 이름</label>
-          <input id="childName" className="input" placeholder="예: 민준" value={draft.childName} onChange={(e) => set({ childName: e.target.value })} />
+          <input id="childName" className="input" maxLength={20} placeholder="예: 민준" value={draft.childName} onChange={(e) => set({ childName: e.target.value })} />
         </div>
         <div className="field" style={{ gap: 10 }}>
           <span className="label">설명 언어</span>
