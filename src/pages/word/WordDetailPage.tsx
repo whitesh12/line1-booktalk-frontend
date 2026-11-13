@@ -1,7 +1,7 @@
 import { Fragment, useEffect, useState } from 'react';
 import { useParams, useSearchParams } from 'react-router-dom';
 import { GoLink } from '../../lib/nav';
-import { AnimWord, Header, Highlight, Icon, speak, TabBar } from '../../components/ui';
+import { AnimWord, Header, Highlight, Icon, speak, TabBar, useSpeechLoading } from '../../components/ui';
 import { BOOKS, WORDS, bookById, sceneFor, type Word } from '../../data/content';
 import { DETAIL, guideFor, type GuideStep } from '../../data/wordDetail';
 import { currentLang, detailRowTr, langOf, meaningTr, nuanceTr } from '../../data/translations';
@@ -61,6 +61,8 @@ export function WordDetailPage() {
   const aiSimilar = ai?.similarExpressions ?? [];
   const book = bookById(q.get('book') ?? undefined) ?? BOOKS.find((b) => b.wordIds.includes(w.id));
   const scene = sceneFor(w, book);
+  const wordLoading = useSpeechLoading(w.text);
+  const sceneLoading = useSpeechLoading(scene);
   // 단어를 열어 본 것도 학습 기록으로 남긴다 (홈의 '최근 학습한 단어')
   useEffect(() => { trackLearning(base.id, 'viewed', book?.id); }, [base.id, book?.id]);
   const extra: (typeof DETAIL)[string] = ai ? {} : DETAIL[w.id] ?? {};
@@ -82,8 +84,8 @@ export function WordDetailPage() {
           <span style={{ fontWeight: 800, letterSpacing: '-0.02em', fontSize: w.text.length > 5 ? 36 : 66, color: 'var(--primary-dark)', lineHeight: 1.2 }}>
             <AnimWord text={w.text} motion={w.motion} mode="loop" />
           </span>
-          <button type="button" onClick={() => speak(w.text)} style={{ display: 'inline-flex', alignItems: 'center', gap: 8, height: 44, padding: '0 18px', borderRadius: 999, border: 0, background: '#fff', color: 'var(--primary)', fontSize: 15, fontWeight: 700, cursor: 'pointer' }}>
-            {Icon.speaker(20)}발음 듣기
+          <button type="button" onClick={() => speak(w.text)} aria-busy={wordLoading} className={wordLoading ? 'tts-loading' : undefined} style={{ display: 'inline-flex', alignItems: 'center', gap: 8, height: 44, padding: '0 18px', borderRadius: 999, border: 0, background: '#fff', color: 'var(--primary)', fontSize: 15, fontWeight: 700, cursor: 'pointer' }}>
+            {Icon.speaker(20)}{wordLoading ? '불러오는 중…' : '발음 듣기'}
           </button>
         </div>
 
@@ -115,7 +117,7 @@ export function WordDetailPage() {
         <section className="card" style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
             <h2 style={sectionTitle}>{book ? '그림책 속 문장' : '예문'}</h2>
-            <button type="button" aria-label="문장 읽어주기" onClick={() => speak(scene)} style={{ width: 44, height: 44, borderRadius: '50%', border: 0, background: 'var(--primary)', color: '#fff', display: 'grid', placeItems: 'center', cursor: 'pointer' }}>{Icon.play()}</button>
+            <button type="button" aria-label={sceneLoading ? '문장 음성 불러오는 중' : '문장 읽어주기'} aria-busy={sceneLoading} className={sceneLoading ? 'tts-loading' : undefined} onClick={() => speak(scene)} style={{ width: 44, height: 44, borderRadius: '50%', border: 0, background: 'var(--primary)', color: '#fff', display: 'grid', placeItems: 'center', cursor: 'pointer' }}>{Icon.play()}</button>
           </div>
           <p style={{ margin: 0, fontSize: 18, lineHeight: 1.7 }}><Highlight sentence={scene} word={w.text} /></p>
         </section>

@@ -1,12 +1,23 @@
 import { useEffect, useRef, useState } from 'react';
 import { useParams } from 'react-router-dom';
 import { GoLink } from '../../lib/nav';
-import { AnimWord, Header, Icon, TabBar, TypeTag, speak } from '../../components/ui';
+import { AnimWord, Header, Icon, TabBar, TypeTag, speak, useSpeechLoading } from '../../components/ui';
 import { BOOKS, WORDS, bookById } from '../../data/content';
 import { isScanBook, renameScanBook, scanLanguage } from '../../data/scanned';
 import { currentLang, langOf, shortMeaningTr } from '../../data/translations';
 
 const LANG_NAME = { vi: '베트남어', zh: '중국어', en: '영어' } as const;
+
+/** 카드의 듣기 버튼. 서버 음성을 불러오는 동안 깜빡인다 */
+function CardSpeak({ text }: { text: string }) {
+  const loading = useSpeechLoading(text);
+  return (
+    <button aria-label={loading ? `${text} 음성 불러오는 중` : `${text} 듣기`} aria-busy={loading} className={loading ? 'tts-loading' : undefined} onClick={() => speak(text)}
+      style={{ position: 'absolute', top: 99, right: 15, width: 28, height: 28, padding: 0, borderRadius: '50%', border: 0, background: 'var(--mint-soft)', color: 'var(--primary)', display: 'grid', placeItems: 'center', cursor: 'pointer' }}>
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2.2} strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M4 9v6h4l5 4V5L8 9H4z" /><path d="M16.5 8.5a5 5 0 010 7" /></svg>
+    </button>
+  );
+}
 
 export function WordListPage() {
   const { bookId } = useParams();
@@ -77,10 +88,7 @@ export function WordListPage() {
                   {shortMeaningTr(w, lang) && <span style={{ fontSize: 12, color: 'var(--text-sub)' }}>{shortMeaningTr(w, lang)}</span>}
                 </div>
               </GoLink>
-              <button aria-label={`${w.text} 듣기`} onClick={() => speak(w.text)}
-                style={{ position: 'absolute', top: 99, right: 15, width: 28, height: 28, padding: 0, borderRadius: '50%', border: 0, background: 'var(--mint-soft)', color: 'var(--primary)', display: 'grid', placeItems: 'center', cursor: 'pointer' }}>
-                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2.2} strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M4 9v6h4l5 4V5L8 9H4z" /><path d="M16.5 8.5a5 5 0 010 7" /></svg>
-              </button>
+              <CardSpeak text={w.text} />
             </div>
           ))}
         </div>

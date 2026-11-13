@@ -1,9 +1,9 @@
-import type { ReactNode } from 'react';
+import { useEffect, useState, type ReactNode } from 'react';
 import { useLocation } from 'react-router-dom';
 import type { Motion, WordType } from '../data/content';
 import { useBack, useGo } from '../lib/nav';
 import { loadProfile } from '../store/profile';
-import { canUseServerTts, prefetchSpeech, synthesize } from '../api/ai';
+import { canUseServerTts, synthesize, ttsQuotaOut } from '../api/ai';
 
 const S = { fill: 'none', stroke: 'currentColor', strokeWidth: 2, strokeLinecap: 'round', strokeLinejoin: 'round' } as const;
 export const Icon = {
@@ -127,7 +127,39 @@ const SILENCE = 'data:audio/wav;base64,UklGRiQAAABXQVZFZm10IBAAAAABAAEAQB8AAEAfA
 let player: HTMLAudioElement | null = null;
 let speakSeq = 0;
 
-/** 읽어 주기. 서버 음성(AI)을 쓰고, 느리거나 안 되면 브라우저 음성으로 대신한다. 속도는 내 정보 설정을 따른다. */
+/** 화면 아래에 잠깐 떴다 사라지는 안내 (같은 문구는 1분에 한 번만) */
+const toastShown = new Map<string, number>();
+export function toast(message: string) {
+  const now = Date.now();
+  if (now - (toastShown.get(message) ?? 0) < 60_000) return;
+  toastShown.set(message, now);
+  const el = document.createElement('div');
+  el.setAttribute('role', 'status');
+  el.className = 'toast';
+  el.textContent = message;
+  document.body.appendChild(el);
+  setTimeout(() => el.remove(), 3200);
+}
+
+/** 서버 음성을 이만큼까지는 기다린다. 이보다 늦거나 실패할 때만 브라우저 음성으로 대신한다. */
+const TTS_MAX_WAIT_MS = 15_000;
+
+// 지금 서버 음성을 불러오는 중인 문장 (버튼에 '불러오는 중' 표시용)
+let loadingText: string | null = null;
+const loadingListeners = new Set<() => void>();
+function setLoading(t: string | null) { loadingText = t; loadingListeners.forEach((f) => f()); }
+/** 이 문장의 서버 음성을 불러오는 중인지 */
+export function useSpeechLoading(text: string): boolean {
+  const [, tick] = useState(0);
+  useEffect(() => {
+    const on = () => tick((n) => n + 1);
+    loadingListeners.add(on);
+    return () => { loadingListeners.delete(on); };
+  }, []);
+  return loadingText === text;
+}
+
+/** 읽어 주기. 단어든 문장이든 서버 음성(AI)으로 읽는다. 서버가 실패하거나 너무 늦을 때만 브라우저 음성. 속도는 내 정보 설정을 따른다. */
 export function speak(text: string, rate = Number(loadProfile().speed) || 1) {
   if (!canUseServerTts()) { browserSpeak(text, rate); return; }
   const seq = ++speakSeq; // 연달아 누르면 마지막 것만 재생
@@ -137,16 +169,21 @@ export function speak(text: string, rate = Number(loadProfile().speed) || 1) {
   audio.pause();
   audio.src = SILENCE;
   audio.play().catch(() => {});
-  synthesize(text)
+  setLoading(text);
+  const timeout = new Promise<never>((_, reject) => setTimeout(() => reject(new Error('TTS_TIMEOUT')), TTS_MAX_WAIT_MS));
+  Promise.race([synthesize(text), timeout])
     .then((url) => {
       if (seq !== speakSeq) return;
+      setLoading(null);
       audio.src = url;
       audio.playbackRate = rate; // 서버는 같은 파일을 주고 빠르기는 재생할 때 바꾼다
       return audio.play();
     })
-    .catch(() => {
+    .catch((e) => {
       if (seq !== speakSeq) return;
+      setLoading(null);
+      console.warn('[speech] 서버 음성을 쓰지 못해 브라우저 음성으로 읽어요', e);
+      toast(ttsQuotaOut() ? '오늘 AI 음성 사용량을 다 써서 기본 음성으로 읽어요' : 'AI 음성을 불러오지 못해 기본 음성으로 읽어요');
       browserSpeak(text, rate);
-      prefetchSpeech(text); // 다음에는 서버 음성으로 바로 나오게
     });
 }

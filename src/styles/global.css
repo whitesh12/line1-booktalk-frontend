@@ -142,3 +142,10 @@ a { color: var(--primary); }
 
 .sr-only { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
 @media (prefers-reduced-motion: reduce) { .typing i { animation: none; opacity: 1; } }
+
+/* 서버 음성을 불러오는 중인 듣기 버튼 */
+.tts-loading { animation: ttsPulse 1s ease-in-out infinite; }
+@keyframes ttsPulse { 0%, 100% { opacity: 1; } 50% { opacity: .45; } }
+/* 잠깐 떴다 사라지는 안내 (화면 위쪽: 하단 버튼을 가리지 않게) */
+.toast { position: fixed; left: 50%; top: calc(14px + env(safe-area-inset-top, 0px)); transform: translateX(-50%); z-index: 50; max-width: min(360px, calc(100vw - 32px)); padding: 10px 16px; border-radius: 14px; background: rgba(29, 36, 51, .92); color: #fff; font-size: 13px; line-height: 1.45; text-align: center; animation: toastIn 3.2s ease forwards; pointer-events: none; }
+@keyframes toastIn { 0% { opacity: 0; transform: translate(-50%, -8px); } 8%, 85% { opacity: 1; transform: translate(-50%, 0); } 100% { opacity: 0; } }

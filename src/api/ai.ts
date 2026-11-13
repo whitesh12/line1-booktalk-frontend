@@ -152,35 +152,56 @@ export function sendTalk(sessionId: string, text: string, clientMessageId = uuid
 
 /* ───────────── 읽어 주기 음성 (POST /speech/synthesis) ───────────── */
 
-const ttsCache = new Map<string, string>();
-/** 서버 음성은 처음 만들 때 5초쯤 걸려서, 이 시간 안에 안 오면 브라우저 음성으로 대신한다. */
-const TTS_WAIT_MS = 3500;
+/*
+ * 서버 음성은 처음 만들 때 짧은 단어는 1초 안쪽, 긴 문장은 6초 넘게 걸리기도 한다.
+ * 예전에는 3.5초가 지나면 브라우저 음성으로 바꿔서 '문장은 다른 목소리'로 들렸다.
+ * → 화면에 들어오면 미리 만들어 두고, 버튼을 누르면 서버 음성이 올 때까지 기다린다(브라우저 음성은 실패했을 때만).
+ */
+const TTS_KEY = 'booktalk.tts';
+type TtsEntry = { url: string; exp: number };
+const ttsCache: Map<string, TtsEntry> = (() => {
+  try { return new Map(Object.entries(JSON.parse(localStorage.getItem(TTS_KEY) ?? '{}') as Record<string, TtsEntry>)); } catch { return new Map(); }
+})();
+const ttsInflight = new Map<string, Promise<string>>();
+
+function cachedUrl(text: string): string | undefined {
+  const e = ttsCache.get(text);
+  if (!e) return undefined;
+  if (e.exp - Date.now() < 5 * 60_000) { ttsCache.delete(text); return undefined; } // 서버 음성 파일 만료 5분 전이면 새로 만든다
+  return e.url;
+}
+function remember(text: string, url: string, expiresAt?: string) {
+  ttsCache.set(text, { url, exp: expiresAt ? Date.parse(expiresAt) : Date.now() + 3600_000 });
+  // 오래된 것부터 지워서 200개까지만 저장
+  while (ttsCache.size > 200) ttsCache.delete(ttsCache.keys().next().value!);
+  try { localStorage.setItem(TTS_KEY, JSON.stringify(Object.fromEntries(ttsCache))); } catch {}
+}
 
 export const canUseServerTts = () => !USE_MOCK && hasToken();
 
-/** 음성 파일 주소를 받는다. 같은 문장은 다시 만들지 않는다 (속도는 재생할 때 바꾼다). */
-export async function synthesize(text: string): Promise<string> {
-  const hit = ttsCache.get(text);
-  if (hit) return hit;
-  const ctrl = new AbortController();
-  const timer = setTimeout(() => ctrl.abort(), TTS_WAIT_MS);
-  try {
-    const r = await request<{ audioUrl: string }>('/speech/synthesis', {
-      method: 'POST', signal: ctrl.signal,
-      body: JSON.stringify({ text, language: 'ko', voice: 'child-friendly-neutral', speed: 1.0 }),
-    });
-    const url = absoluteUrl(r.audioUrl);
-    ttsCache.set(text, url);
-    return url;
-  } finally {
-    clearTimeout(timer);
-  }
-}
+// 서버(AI) 음성은 하루 사용량이 정해져 있다. 다 쓰면(429 AI_QUOTA_EXCEEDED) 그날은 새 음성을 요청하지 않는다.
+// (서버에 이미 만들어 둔 음성은 계속 받을 수 있어서, 요청은 하되 실패하면 바로 브라우저 음성으로 넘어간다)
+const QUOTA_KEY = 'booktalk.ttsQuotaOut';
+const today = () => new Date().toDateString();
+export const ttsQuotaOut = () => { try { return localStorage.getItem(QUOTA_KEY) === today(); } catch { return false; } };
 
-/** 시간 초과로 포기한 문장도 서버에서는 계속 만들어지니, 다음 재생을 위해 미리 받아 둔다. */
-export function prefetchSpeech(text: string) {
-  if (!canUseServerTts() || ttsCache.has(text)) return;
-  request<{ audioUrl: string }>('/speech/synthesis', {
-    method: 'POST', body: JSON.stringify({ text, language: 'ko', voice: 'child-friendly-neutral', speed: 1.0 }),
-  }).then((r) => ttsCache.set(text, absoluteUrl(r.audioUrl))).catch(() => {});
+/** 음성 파일 주소를 받는다. 같은 문장은 다시 만들지 않고, 만드는 중이면 그 요청을 같이 기다린다 (속도는 재생할 때 바꾼다). */
+export function synthesize(text: string): Promise<string> {
+  const hit = cachedUrl(text);
+  if (hit) return Promise.resolve(hit);
+  let p = ttsInflight.get(text);
+  if (!p) {
+    p = request<{ audioUrl: string; expiresAt?: string }>('/speech/synthesis', {
+      method: 'POST', body: JSON.stringify({ text, language: 'ko', voice: 'child-friendly-neutral', speed: 1.0 }),
+    }).then((r) => {
+      const url = absoluteUrl(r.audioUrl);
+      remember(text, url, r.expiresAt);
+      return url;
+    }).catch((e) => {
+      if (e instanceof ApiError && e.code === 'AI_QUOTA_EXCEEDED') { try { localStorage.setItem(QUOTA_KEY, today()); } catch {} }
+      throw e;
+    }).finally(() => ttsInflight.delete(text));
+    ttsInflight.set(text, p);
+  }
+  return p;
 }
