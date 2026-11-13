@@ -3,7 +3,7 @@ import { useSearchParams } from 'react-router-dom';
 import { GoLink, useGo } from '../../lib/nav';
 import { Header, TabBar } from '../../components/ui';
 import { ApiError, USE_MOCK, analyzePhoto, isTransientAiError, setChildLanguage, withChild } from '../../api/client';
-import { SCAN_BOOK_ID, peekPendingPhoto, saveScan, setPendingPhoto } from '../../data/scanned';
+import { peekPendingPhoto, saveScan, setPendingPhoto } from '../../data/scanned';
 import type { Profile } from '../../store/profile';
 
 export function ScanAnalyzingPage({ profile, onSave }: { profile: Profile; onSave: (p: Profile) => void }) {
@@ -38,8 +38,8 @@ export function ScanAnalyzingPage({ profile, onSave }: { profile: Profile; onSav
         if (ctrl.signal.aborted) return;
         if (r.expressions.length === 0) { setError({ message: '이 페이지에서는 배울 표현을 찾지 못했어요. 다른 페이지를 찍어 볼까요?', retry: false }); return; }
         setPendingPhoto(null);
-        saveScan(r);
-        go(`/books/${SCAN_BOOK_ID}`);
+        const bookId = saveScan(r); // 찍을 때마다 새 책으로 저장
+        go(`/books/${bookId}`);
       })
       .catch((e) => {
         if (ctrl.signal.aborted) return;

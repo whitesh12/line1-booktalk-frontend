@@ -1,8 +1,9 @@
+import { useEffect, useRef, useState } from 'react';
 import { useParams } from 'react-router-dom';
 import { GoLink } from '../../lib/nav';
 import { AnimWord, Header, Icon, TabBar, TypeTag, speak } from '../../components/ui';
 import { BOOKS, WORDS, bookById } from '../../data/content';
-import { SCAN_BOOK_ID, scanLanguage } from '../../data/scanned';
+import { isScanBook, renameScanBook, scanLanguage } from '../../data/scanned';
 import { currentLang, langOf, shortMeaningTr } from '../../data/translations';
 
 const LANG_NAME = { vi: '베트남어', zh: '중국어', en: '영어' } as const;
@@ -12,16 +13,46 @@ export function WordListPage() {
   const book = bookById(bookId) ?? BOOKS[0];
   const words = book.wordIds.map((id) => WORDS[id]);
   const lang = currentLang();
+  const mine = isScanBook(book.id); // 내가 찍은 책이면 이름을 바꿀 수 있다
+  const [title, setTitle] = useState(book.title);
+  const [editing, setEditing] = useState(false);
+  const [draft, setDraft] = useState('');
+  const inputRef = useRef<HTMLInputElement>(null);
+  useEffect(() => { setTitle(book.title); setEditing(false); }, [book.id, book.title]);
+  useEffect(() => { if (editing) inputRef.current?.select(); }, [editing]);
+  const save = () => {
+    if (renameScanBook(book.id, draft)) setTitle(draft.trim().slice(0, 30));
+    setEditing(false);
+  };
   // 찍은 페이지가 예전 설명 언어로 분석된 경우 (번역은 분석할 때의 언어로 만들어진다)
-  const scanned = scanLanguage();
-  const staleLang = book.id === SCAN_BOOK_ID && !!scanned && langOf(scanned) !== lang;
+  const scanned = scanLanguage(book.id);
+  const staleLang = mine && !!scanned && langOf(scanned) !== lang;
   return (
     <div className="screen">
       <Header title={`이 페이지의 표현 (${words.length})`} to="/books" />
       <div className="content" style={{ paddingTop: 4, gap: 12 }}>
-        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-          <span className="pill" style={{ background: '#fff', border: '1px solid var(--border)', padding: '6px 12px', fontSize: 13, color: 'var(--text-body)' }}>{Icon.book(16)}{book.title}{book.page && ` · ${book.page}`}</span>
-          <span style={{ fontSize: 13, color: 'var(--text-sub)' }}>카드를 눌러 배워요</span>
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 10 }}>
+          {editing ? (
+            <form className="pill" onSubmit={(e) => { e.preventDefault(); save(); }}
+              style={{ flex: 1, minWidth: 0, background: '#fff', border: '1.5px solid var(--primary)', padding: '3px 4px 3px 12px', fontSize: 13, color: 'var(--text-body)' }}>
+              {Icon.book(16)}
+              <input ref={inputRef} aria-label="책 이름" value={draft} maxLength={30} onChange={(e) => setDraft(e.target.value)}
+                onBlur={save} onKeyDown={(e) => { if (e.key === 'Escape') { e.preventDefault(); setEditing(false); } }}
+                style={{ flex: 1, minWidth: 0, border: 0, outline: 'none', background: 'transparent', font: 'inherit', fontWeight: 700, color: 'var(--text)', padding: '4px 0' }} />
+              <button type="submit" aria-label="이름 저장" onMouseDown={(e) => e.preventDefault()}
+                style={{ flex: 'none', width: 28, height: 28, borderRadius: '50%', border: 0, background: 'var(--primary)', display: 'grid', placeItems: 'center', cursor: 'pointer' }}>{Icon.check(14)}</button>
+            </form>
+          ) : (
+            <span className="pill" style={{ minWidth: 0, background: '#fff', border: '1px solid var(--border)', padding: mine ? '3px 4px 3px 12px' : '6px 12px', fontSize: 13, color: 'var(--text-body)' }}>
+              {Icon.book(16)}
+              <span style={{ minWidth: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{title}{book.page && ` · ${book.page}`}</span>
+              {mine && (
+                <button type="button" aria-label="책 이름 바꾸기" title="책 이름 바꾸기" onClick={() => { setDraft(title); setEditing(true); }}
+                  style={{ flex: 'none', width: 28, height: 28, borderRadius: '50%', border: 0, background: 'var(--mint-soft)', color: 'var(--primary)', display: 'grid', placeItems: 'center', cursor: 'pointer' }}>{Icon.pencil(14)}</button>
+              )}
+            </span>
+          )}
+          {!editing && <span style={{ flex: 'none', fontSize: 13, color: 'var(--text-sub)' }}>카드를 눌러 배워요</span>}
         </div>
         {staleLang && (
           <p role="status" style={{ margin: 0, padding: '10px 14px', borderRadius: 14, background: '#FFF6E5', color: '#8A5A00', fontSize: 13, lineHeight: 1.5 }}>

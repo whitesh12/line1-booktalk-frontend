@@ -4,7 +4,7 @@
  */
 import { ApiError, USE_MOCK, absoluteUrl, hasToken, request, uuid } from './client';
 import { BOOKS, WORDS } from '../data/content';
-import { serverVocabId, setDemoVocab } from '../data/scanned';
+import { isScanBook, serverVocabId, setDemoVocab } from '../data/scanned';
 import { loadProfile } from '../store/profile';
 import { recordLearning, type Stage } from '../store/learning';
 
@@ -38,6 +38,7 @@ export function loadDemoVocab(): Promise<void> {
     .then((books) => {
       const map: Record<string, Record<string, string>> = {};
       for (const local of BOOKS) {
+        if (isScanBook(local.id)) continue; // 내가 찍은 책은 이름을 바꿔도 시연용 책과 섞이지 않게
         const remote = books.find((b) => b.title.trim() === local.title.trim());
         if (!remote?.expressions) continue;
         for (const wordId of local.wordIds) {
