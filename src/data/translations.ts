@@ -108,7 +108,8 @@ export function meaningTr(w: Word, lang: Lang = currentLang(), server: ServerTra
 }
 
 /** 단어 카드용 짧은 번역 */
-export const shortMeaningTr = (w: Word, lang: Lang = currentLang()) => meaningTr(w, lang, scanTranslation(w.id), false);
+export const shortMeaningTr = (w: Word, lang: Lang = currentLang(), bookId?: string) =>
+  meaningTr(w, lang, scanTranslation(w.id, bookId ?? new URLSearchParams(location.search).get('book')), false);
 
 /** '이럴 때 써요' 설명 번역 */
 export function nuanceTr(w: Word, lang: Lang = currentLang()): string | undefined {

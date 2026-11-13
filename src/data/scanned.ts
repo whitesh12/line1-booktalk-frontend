@@ -1,3 +1,4 @@
+import { useEffect, useState } from 'react';
 import { BOOKS, WORDS, type Book, type Word, type WordType } from './content';
 
 /** GET /books/pages/{pageId}/analysis 의 expressions 항목 */
@@ -39,11 +40,27 @@ let scanLangs: Record<string, string | null> = {};
 /** 시연용 동화책 단어: 화면 책 id → (화면 단어 id → 서버 표현 id). 같은 단어도 책마다 id 가 다르다. */
 const DEMO_KEY = 'booktalk.demoVocab';
 let demoIds: Record<string, Record<string, string>> = (() => {
-  try { return JSON.parse(localStorage.getItem(DEMO_KEY) ?? '{}'); } catch { return {}; }
+  try {
+    const v = JSON.parse(localStorage.getItem(DEMO_KEY) ?? '{}');
+    return v && typeof v === 'object' && !Array.isArray(v) ? v : {};
+  } catch { return {}; }
 })();
 export function setDemoVocab(map: Record<string, Record<string, string>>) {
   demoIds = map;
   try { localStorage.setItem(DEMO_KEY, JSON.stringify(map)); } catch {}
+  window.dispatchEvent(new Event(VOCAB_EVENT)); // 이미 열려 있는 단어 화면도 서버 단어를 쓰도록
+}
+
+/** 서버 단어 연결(시연용 책·찍은 책)이 바뀌면 다시 그린다 */
+const VOCAB_EVENT = 'booktalk:vocab';
+export function useVocabVersion(): number {
+  const [v, setV] = useState(0);
+  useEffect(() => {
+    const on = () => setV((n) => n + 1);
+    window.addEventListener(VOCAB_EVENT, on);
+    return () => window.removeEventListener(VOCAB_EVENT, on);
+  }, []);
+  return v;
 }
 
 const urlBook = () => new URLSearchParams(location.search).get('book');
@@ -70,11 +87,16 @@ export const scanLanguage = (bookId: string) => scanLangs[bookId] ?? null;
 function load(): ScanBook[] {
   try {
     const list = localStorage.getItem(LIST_KEY);
-    if (list) return JSON.parse(list);
+    // 저장 데이터가 깨져 있거나 예전 형식이면 쓸 수 있는 책만 남긴다 (흰 화면으로 멈추지 않게)
+    if (list) {
+      const v = JSON.parse(list);
+      return Array.isArray(v) ? v.filter((s) => s && typeof s.id === 'string' && Array.isArray(s.expressions)).map((s) => ({ ...s, title: s.title || DEFAULT_SCAN_TITLE })) : [];
+    }
     // 예전 기록(1권)을 새 목록으로 옮긴다. id 'scan' 은 그대로 둬서 학습 기록 링크가 깨지지 않게 한다.
     const old = localStorage.getItem(OLD_KEY);
     if (old) {
       const o = JSON.parse(old);
+      if (!o || !Array.isArray(o.expressions)) return [];
       return [{ id: 'scan', title: DEFAULT_SCAN_TITLE, pageId: o.pageId, pageLabel: o.pageLabel ?? null, createdAt: Date.now(), expressions: o.expressions ?? [] }];
     }
   } catch {}

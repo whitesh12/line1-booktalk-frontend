@@ -20,6 +20,7 @@ export function ScanPage() {
   const [denied, setDenied] = useState(false);
   const [flash, setFlash] = useState(false);
   const [preparing, setPreparing] = useState(false); // 사진 줄이는 중
+  const busy = useRef(false); // 셔터 연타 막기
   const [photoError, setPhotoError] = useState<string | null>(null); // 용량 초과 등
 
   // 화면 안에 카메라(후면) 미리보기를 띄운다. 권한이 없거나 카메라가 없으면 예전처럼 눌러서 카메라 앱을 연다.
@@ -61,13 +62,15 @@ export function ScanPage() {
       setPhotoError(e instanceof PhotoError ? e.message : '사진을 준비하지 못했어요. 다시 찍거나 골라 주세요.');
     } finally {
       setPreparing(false);
+      busy.current = false;
     }
   }
 
   /** 화면 틀에 보이는 부분만 잘라서 사진으로 만든다 (object-fit: cover 와 같은 영역) */
   function capture() {
     const v = videoRef.current;
-    if (!v || !v.videoWidth) return;
+    if (!v || !v.videoWidth || busy.current) return;
+    busy.current = true; // toBlob 이 끝나기 전에 또 누르면 두 번 처리되던 문제
     const box = v.getBoundingClientRect();
     const scale = Math.max(box.width / v.videoWidth, box.height / v.videoHeight);
     const sw = box.width / scale;
@@ -81,7 +84,7 @@ export function ScanPage() {
     canvas.getContext('2d')!.drawImage(v, sx, sy, sw, sh, 0, 0, canvas.width, canvas.height);
     setFlash(true);
     canvas.toBlob((blob) => {
-      if (blob) submitPhoto(blob);
+      if (blob) submitPhoto(blob); else busy.current = false;
     }, 'image/jpeg', 0.9);
   }
 

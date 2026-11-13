@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { Header, Icon, TabBar } from '../../components/ui';
+import { Header, Icon, TabBar, toast } from '../../components/ui';
 import { useGo } from '../../lib/nav';
 import { LOCAL_CSS, readDraft, setDraft, usePracticeWord } from './shared';
 
@@ -28,7 +28,7 @@ export function PracticeWritePage() {
           <textarea id="sentence" className="textarea" style={{ height: 170 }} placeholder="여기에 직접 문장을 입력해 보세요" value={text} onChange={(e) => setText(e.target.value)} />
           {tooLong && <span role="alert" style={{ fontSize: 13, color: 'var(--coral)' }}>문장은 {MAX_SENTENCE}자까지 쓸 수 있어요. (지금 {text.trim().length}자)</span>}
         </div>
-        <button type="button" className="btn btn-soft" onClick={() => alert('음성 입력은 준비 중이에요.')}>{Icon.mic(18)}마이크로 입력</button>
+        <button type="button" className="btn btn-soft" onClick={() => toast('음성 입력은 준비 중이에요. 글로 입력해 주세요.')}>{Icon.mic(18)}마이크로 입력</button>
       </div>
       <div className="bottom-bar">
         <button className="btn btn-primary" onClick={() => (text.trim() && !tooLong ? go(`/words/${w.id}/practice/reviewing${qs}`, { state: { sentence: text } }) : document.getElementById('sentence')?.focus())}>완료</button>

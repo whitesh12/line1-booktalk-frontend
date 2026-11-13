@@ -5,7 +5,7 @@ import { AnimWord, Header, Highlight, Icon, speak, TabBar, useSpeechLoading } fr
 import { BOOKS, WORDS, bookById, sceneFor, type Word } from '../../data/content';
 import { DETAIL, guideFor, type GuideStep } from '../../data/wordDetail';
 import { currentLang, detailRowTr, langOf, meaningTr, nuanceTr } from '../../data/translations';
-import { serverVocabId } from '../../data/scanned';
+import { serverVocabId, useVocabVersion } from '../../data/scanned';
 import { USE_MOCK, hasToken } from '../../api/client';
 import { cachedVocabulary, fetchVocabulary, trackLearning, type VocabDetail } from '../../api/ai';
 
@@ -19,6 +19,7 @@ const exprFont = { fontWeight: 800, letterSpacing: '-0.02em', fontSize: 19 } as 
 const grid = { display: 'grid', gridTemplateColumns: '96px minmax(0, 1fr) 96px', gap: 8 } as const;
 /** 사진으로 찾은 단어면 서버(AI)가 만든 단어 설명을 불러온다. */
 function useAiVocabulary(wordId: string) {
+  useVocabVersion(); // 시연용 단어 연결이 늦게 끝나면 다시 그려서 서버 id 를 잡는다
   const vocabId = serverVocabId(wordId);
   const usable = !!vocabId && !USE_MOCK && hasToken();
   const [ai, setAi] = useState<VocabDetail | undefined>(() => (usable ? cachedVocabulary(vocabId!) : undefined));

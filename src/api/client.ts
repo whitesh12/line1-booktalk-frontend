@@ -53,6 +53,7 @@ export class ApiError extends Error {
 function saveTokens(t: { accessToken: string; refreshToken: string }) {
   store.set(TOKEN_KEY, t.accessToken);
   store.set(REFRESH_KEY, t.refreshToken);
+  window.dispatchEvent(new Event('booktalk:auth')); // 로그인되면 시연용 단어 연결 등을 다시 시도
 }
 function clearTokens() {
   store.del(TOKEN_KEY);
@@ -68,7 +69,8 @@ function refreshTokens(): Promise<boolean> {
     method: 'POST', body: JSON.stringify({ refreshToken }),
   }, true)
     .then((t) => { saveTokens(t); return true; })
-    .catch(() => { clearTokens(); return false; })
+    // 서버가 갱신을 거부했을 때만 토큰을 지운다. 통신이 잠깐 끊긴 것(NETWORK_ERROR·TIMEOUT)으로 로그아웃시키지 않는다.
+    .catch((e) => { if (e instanceof ApiError && e.status >= 400 && e.status < 500 && e.status !== 408) clearTokens(); return false; })
     .finally(() => { refreshing = null; });
   return refreshing;
 }
@@ -329,12 +331,23 @@ function abortableWait(ms: number, signal: AbortSignal) {
 
 export interface ChildReply { text: string; feedback?: { tips: string[] } }
 
-const OPENERS = ['토끼가 당근을 보고 가슴이 콩닥콩닥할 것 같아!'];
-export const openingLine = () => OPENERS[0];
+/** 받침이 있으면 a, 없으면 b (예: 두근두근'이' / 퐁당'이' / 영차'가') */
+const josa = (word: string, a: string, b: string) => {
+  const c = word.charCodeAt(word.length - 1);
+  return c >= 0xac00 && c <= 0xd7a3 && (c - 0xac00) % 28 ? a : b;
+};
 
-const SCRIPT = ['근데 두근두근이 뭐야?', '나도 생일 선물 받을 때 그랬어!', '내일 소풍 가는 것도 두근두근해!'];
+// 연습용 대화(AI 를 쓸 수 없을 때) 대본. 두근두근은 디자인 시안 대본, 나머지 단어는 그 단어로 만든다.
+const DUGEUN_OPENER = '토끼가 당근을 보고 가슴이 콩닥콩닥할 것 같아!';
+const DUGEUN_SCRIPT = ['근데 두근두근이 뭐야?', '나도 생일 선물 받을 때 그랬어!', '내일 소풍 가는 것도 두근두근해!'];
 
-export const childScript = (turn: number) => SCRIPT[Math.min(turn, SCRIPT.length - 1)];
+export const openingLine = (w: Word) => (w.id === 'dugeun' ? DUGEUN_OPENER : `엄마, 그림책에 ‘${w.text}’${josa(w.text, '이', '가')} 나왔어!`);
+
+export const childScript = (turn: number, w: Word) => {
+  const lines = w.id === 'dugeun' ? DUGEUN_SCRIPT
+    : [`근데 ${w.text}${josa(w.text, '은', '는')} 무슨 뜻이야?`, `아하! 나도 ${w.text} 해 보고 싶어!`, `또 ${w.text} 이야기해 줘!`];
+  return lines[Math.min(turn, lines.length - 1)];
+};
 export const talkFeedbackTips = (word: Word) => {
   const stem = word.text.split(' ')[0];
   return ['뜻은 정확해요! 상황에 맞는 표현을 잘 골랐어요.', `‘${stem}해’라고 이어서 말하면 더 자연스러워요.`];
@@ -347,6 +360,6 @@ export async function sendToChild(word: Word, text: string, turn: number): Promi
   if (wrong.test(text)) {
     return { text: '응? 다시 말해 줘!', feedback: { tips: talkFeedbackTips(word) } };
   }
-  return { text: childScript(turn) };
+  return { text: childScript(turn, word) };
 }
 export const MAX_TURNS = 4;

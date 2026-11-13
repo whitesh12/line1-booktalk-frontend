@@ -1,10 +1,11 @@
 import { useEffect, useRef, useState } from 'react';
 import { useBlocker, useSearchParams } from 'react-router-dom';
-import { Header, Icon, KidMessage, TabBar } from '../../components/ui';
+import { Header, Icon, KidMessage, TabBar, toast } from '../../components/ui';
 import type { Word } from '../../data/content';
 import { isIntentionalNav, useGo } from '../../lib/nav';
-import { ApiError, MAX_TURNS, USE_MOCK, childScript, hasToken, openingLine, sendToChild, talkFeedbackTips } from '../../api/client';
-import { finishTalk, sendTalk, startTalk, trackLearning, type TalkTurn } from '../../api/ai';
+import { ApiError, MAX_TURNS, USE_MOCK, childScript, openingLine, sendToChild, talkFeedbackTips, withChild } from '../../api/client';
+import { finishTalk, loadDemoVocab, sendTalk, startTalk, trackLearning, type TalkSession, type TalkTurn } from '../../api/ai';
+import { recordLearning } from '../../store/learning';
 import { serverVocabId } from '../../data/scanned';
 import type { Profile } from '../../store/profile';
 import { useTalk } from './shared';
@@ -19,7 +20,7 @@ type Seed = { msgs: Msg[]; turn: number; waiting: boolean };
 function demoSeed(demo: string | null, w: Word, name: string): Seed {
   const kid = (text: string): Msg => ({ from: 'kid', text });
   const me = (text: string): Msg => ({ from: 'me', text });
-  const first = [kid(openingLine()), me(`맞아, 토끼 마음이 ${w.text}했을 것 같아!`), kid(childScript(0))];
+  const first = [kid(openingLine(w)), me(`맞아, 토끼 마음이 ${w.text}했을 것 같아!`), kid(childScript(0, w))];
   const wrong = me(`좋아하는 거 보면 마음이 ${w.text}을 해.`);
   switch (demo) {
     case 'chat': return { msgs: first, turn: 1, waiting: false };
@@ -27,22 +28,21 @@ function demoSeed(demo: string | null, w: Word, name: string): Seed {
     case 'feedback': return { msgs: [...first, wrong, { from: 'feedback', tips: talkFeedbackTips(w) }], turn: 1, waiting: false };
     case 'done': return {
       msgs: [...first,
-        me('좋아하는 걸 보면 마음이 자꾸 뛰는 거야. 토끼도 당근을 보고 그랬을 거야.'), kid(childScript(1)),
-        me(`맞아! 그때 ${name}이 마음도 ${w.text}했겠다.`), kid(childScript(2)),
+        me('좋아하는 걸 보면 마음이 자꾸 뛰는 거야. 토끼도 당근을 보고 그랬을 거야.'), kid(childScript(1, w)),
+        me(`맞아! 그때 ${name}이 마음도 ${w.text}했겠다.`), kid(childScript(2, w)),
         me(`토끼가 당근 보고 ${w.text}한 것처럼, ${name}이도 소풍 생각하면 ${w.text}하지?`)],
       turn: MAX_TURNS, waiting: false,
     };
-    default: return { msgs: [kid(openingLine())], turn: 0, waiting: false };
+    default: return { msgs: [kid(openingLine(w))], turn: 0, waiting: false };
   }
 }
 
-export function TalkChatPage({ profile }: { profile: Profile }) {
+export function TalkChatPage({ profile, onSave }: { profile: Profile; onSave: (p: Profile) => void }) {
   const { w, qs } = useTalk();
   const go = useGo();
   const demo = useSearchParams()[0].get('demo');
-  // 사진으로 찾은 단어(서버 표현 id 가 있는 단어)는 AI 와 실제로 대화한다.
-  const vocabId = serverVocabId(w.id);
-  const wantLive = !demo && !USE_MOCK && !!vocabId && !!profile.childId && hasToken();
+  // 서버 모드에서는 AI 와 실제로 대화한다. (화면 미리보기 ?demo= 와 서버 미사용 모드만 연습용 대화)
+  const wantLive = !demo && !USE_MOCK;
   const [mode, setMode] = useState<'connecting' | 'live' | 'mock'>(wantLive ? 'connecting' : 'mock');
   const session = useRef<string | null>(null);
   const [notice, setNotice] = useState<string | null>(null);
@@ -61,13 +61,26 @@ export function TalkChatPage({ profile }: { profile: Profile }) {
   useEffect(() => { end.current?.scrollIntoView({ behavior: 'smooth' }); }, [msgs, waiting]);
 
   // 학습 기록: 대화를 시작하면 '대화 연습 중', 끝까지 하면 '완료' (화면 미리보기 ?demo= 는 기록하지 않음)
-  useEffect(() => { if (!demo) trackLearning(w.id, done ? 'talked' : 'talking'); }, [demo, w.id, done]);
+  // 연습용 대화(AI 아님)는 이 기기 기록만 남기고 서버에 '대화 완료'를 보내지 않는다.
+  useEffect(() => {
+    if (demo || mode === 'connecting') return;
+    if (mode === 'live') trackLearning(w.id, done ? 'talked' : 'talking');
+    else recordLearning(w.id, done ? 'talked' : 'talking', new URLSearchParams(location.search).get('book'));
+  }, [demo, w.id, done, mode]);
+
+  /** 서버 단어 id 를 찾고(시연용 책은 연결이 늦었으면 다시 불러와 보고), 로그인·아이 등록을 확인한 뒤 AI 대화를 연다 */
+  async function openLive(): Promise<TalkSession> {
+    let vocabularyId = serverVocabId(w.id);
+    if (!vocabularyId) { await loadDemoVocab(); vocabularyId = serverVocabId(w.id); }
+    if (!vocabularyId) throw new ApiError(422, 'WORD_NOT_ON_SERVER', '이 단어는 지금 AI 대화를 할 수 없어요.');
+    return withChild(profile, (childId) => onSave({ ...profile, childId }), (childId) => startTalk(childId, vocabularyId!));
+  }
 
   // AI 대화 시작. 안 되면 연습용 대화로 진행한다.
   useEffect(() => {
     if (!wantLive) return;
     let alive = true;
-    startTalk(profile.childId!, vocabId!)
+    openLive()
       .then((s) => {
         if (!alive) { finishTalk(s.id); return; }
         session.current = s.id;
@@ -82,7 +95,7 @@ export function TalkChatPage({ profile }: { profile: Profile }) {
         setNotice(e instanceof ApiError && e.code === 'ACTIVE_CONVERSATION_EXISTS'
           ? `${e.message} 지금은 연습용 대화로 진행해요.`
           : '지금은 AI 와 연결하지 못해서 연습용 대화로 진행해요.');
-        setMsgs(demoSeed(null, w, profile.childName).msgs);
+        setMsgs(demoSeed(null, w, profile.childName).msgs); // 이 단어로 만든 연습용 대본
         setMode('mock');
         setWaiting(false);
       });
@@ -94,16 +107,30 @@ export function TalkChatPage({ profile }: { profile: Profile }) {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  async function sendLive(t: string) {
+  async function sendLive(t: string, before: Msg[]) {
     let r: TalkTurn;
     try {
       r = await sendTalk(session.current!, t);
     } catch (e) {
       console.warn('[conversation] 메시지 전송 실패', e);
-      setWaiting(false);
-      setMsgs((m) => m.slice(0, -1));
+      setMsgs(before); // 보내기 전 화면(이전 피드백 포함)으로 되돌린다
       setText(t);
-      setNotice('메시지를 보내지 못했어요. 다시 보내 주세요.');
+      // 서버에서 대화가 사라졌으면(재시작·만료 등) 새 대화를 열어 이어 간다
+      const gone = e instanceof ApiError && [400, 404, 409, 410].includes(e.status);
+      if (gone) {
+        try {
+          const s = await openLive();
+          session.current = s.id;
+          setMsgs((m) => [...m, { from: 'kid', text: s.openingMessage.text }]);
+          setAiHint(s.openingMessage.hint ?? null);
+          setNotice('대화 연결이 끊겨서 새로 이어 갈게요. 다시 보내 주세요.');
+        } catch {
+          setNotice('AI 대화 연결이 끊겼어요. 잠시 후 다시 시도해 주세요.');
+        }
+      } else {
+        setNotice('메시지를 보내지 못했어요. 다시 보내 주세요.');
+      }
+      setWaiting(false);
       return;
     }
     setWaiting(false);
@@ -131,9 +158,10 @@ export function TalkChatPage({ profile }: { profile: Profile }) {
     if (!t) { document.getElementById('talk-input')?.focus(); return; }
     setText('');
     setNotice(null);
+    const before = msgs;
     setMsgs((m) => [...m.filter((x) => x.from !== 'feedback'), { from: 'me', text: t }]);
     setWaiting(true);
-    if (mode === 'live') { await sendLive(t); return; }
+    if (mode === 'live') { await sendLive(t, before); return; }
     const reply = await sendToChild(w, t, turn);
     setWaiting(false);
     if (reply.feedback) {
@@ -219,7 +247,7 @@ export function TalkChatPage({ profile }: { profile: Profile }) {
         <form className="composer" onSubmit={(e) => { e.preventDefault(); send(); }}>
           <input id="talk-input" aria-label={retry ? '답변 다시 입력' : '답변 입력'} placeholder={waiting ? '답을 기다리는 중...' : retry ? '다시 답해 보세요' : '여기에 답해 보세요'}
             value={text} disabled={waiting} onChange={(e) => setText(e.target.value)} />
-          {!waiting && !retry && <button type="button" className="round mic" aria-label="음성 입력">{Icon.mic()}</button>}
+          {!waiting && !retry && <button type="button" className="round mic" aria-label="음성 입력 (준비 중)" onClick={() => toast('음성 입력은 준비 중이에요. 글로 입력해 주세요.')}>{Icon.mic()}</button>}
           <button type="submit" className="round send" aria-label="보내기" disabled={waiting}>{Icon.arrow()}</button>
         </form>
       )}

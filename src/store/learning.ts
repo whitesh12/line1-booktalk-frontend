@@ -19,7 +19,11 @@ const KEY = 'booktalk.learning';
 const EVENT = 'booktalk:learning';
 
 export function loadLearning(): LearnRecord[] {
-  try { return JSON.parse(localStorage.getItem(KEY) ?? '[]'); } catch { return []; }
+  try {
+    const v = JSON.parse(localStorage.getItem(KEY) ?? '[]');
+    // 깨진 데이터가 있어도 홈이 멈추지 않게 올바른 기록만 남긴다
+    return Array.isArray(v) ? v.filter((r) => r && typeof r.wordId === 'string' && typeof r.at === 'number') : [];
+  } catch { return []; }
 }
 
 /** 학습 기록 남기기. 단계는 앞으로만 간다 (대화까지 마친 단어를 다시 봐도 '완료' 유지). */

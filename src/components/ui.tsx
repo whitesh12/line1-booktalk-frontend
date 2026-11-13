@@ -3,7 +3,7 @@ import { useLocation } from 'react-router-dom';
 import type { Motion, WordType } from '../data/content';
 import { useBack, useGo } from '../lib/nav';
 import { loadProfile } from '../store/profile';
-import { canUseServerTts, synthesize, ttsQuotaOut } from '../api/ai';
+import { canUseServerTts, hasCachedSpeech, synthesize, ttsQuotaOut } from '../api/ai';
 
 const S = { fill: 'none', stroke: 'currentColor', strokeWidth: 2, strokeLinecap: 'round', strokeLinejoin: 'round' } as const;
 export const Icon = {
@@ -162,10 +162,19 @@ export function useSpeechLoading(text: string): boolean {
 /** 읽어 주기. 단어든 문장이든 서버 음성(AI)으로 읽는다. 서버가 실패하거나 너무 늦을 때만 브라우저 음성. 속도는 내 정보 설정을 따른다. */
 export function speak(text: string, rate = Number(loadProfile().speed) || 1) {
   if (!canUseServerTts()) { browserSpeak(text, rate); return; }
+  // 아이폰은 브라우저 음성(speechSynthesis)을 '누른 순간'에만 시작할 수 있다.
+  // 오늘 AI 음성 사용량이 이미 떨어졌고 받아 둔 음성도 없으면, 서버를 기다리지 않고 바로 기본 음성으로 읽는다.
+  if (ttsQuotaOut() && !hasCachedSpeech(text)) {
+    toast('오늘 AI 음성 사용량을 다 써서 기본 음성으로 읽어요');
+    browserSpeak(text, rate);
+    return;
+  }
   const seq = ++speakSeq; // 연달아 누르면 마지막 것만 재생
   player ??= new Audio();
   const audio = player;
   window.speechSynthesis?.cancel();
+  // 나중에 서버 음성이 실패해 기본 음성으로 읽을 때를 대비해, 누른 순간에 기본 음성을 소리 없이 깨워 둔다 (아이폰)
+  try { const u = new SpeechSynthesisUtterance(' '); u.volume = 0; window.speechSynthesis?.speak(u); } catch { /* 지원하지 않는 브라우저 */ }
   audio.pause();
   audio.src = SILENCE;
   audio.play().catch(() => {});

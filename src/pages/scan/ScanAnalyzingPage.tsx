@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { useSearchParams } from 'react-router-dom';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import { GoLink, useGo } from '../../lib/nav';
 import { Header, TabBar } from '../../components/ui';
 import { ApiError, USE_MOCK, analyzePhoto, isTransientAiError, setChildLanguage, withChild } from '../../api/client';
@@ -9,18 +9,25 @@ import type { Profile } from '../../store/profile';
 
 export function ScanAnalyzingPage({ profile, onSave }: { profile: Profile; onSave: (p: Profile) => void }) {
   const go = useGo();
+  const nav = useNavigate();
   const hold = useSearchParams()[0].get('demo') === 'hold';
   const [photo] = useState(peekPendingPhoto);
   const live = !USE_MOCK && !!photo;
   const [error, setError] = useState<{ title?: string; message: string; retry: boolean } | null>(null);
   const [attempt, setAttempt] = useState(0); // '다시 시도'를 누르면 같은 사진으로 다시 분석
 
-  // 모의 모드(또는 사진 없이 들어온 경우): 예시 책으로 넘어간다
+  // 서버 모드인데 사진 없이 들어온 경우(뒤로가기·새로고침): 예시 책을 결과처럼 보여 주지 않고 촬영 화면으로 돌려보낸다
   useEffect(() => {
-    if (hold || live) return;
+    if (hold || USE_MOCK || photo) return;
+    nav('/scan', { replace: true });
+  }, [hold, photo, nav]);
+
+  // 서버를 쓰지 않는 모드(예시 데이터): 예시 책으로 넘어간다
+  useEffect(() => {
+    if (hold || !USE_MOCK) return;
     const t = setTimeout(() => go('/books/rabbit'), 2200);
     return () => clearTimeout(t);
-  }, [go, hold, live]);
+  }, [go, hold]);
 
   // 실제 연동: 업로드 → 분석 → 결과
   useEffect(() => {
@@ -80,7 +87,7 @@ export function ScanAnalyzingPage({ profile, onSave }: { profile: Profile; onSav
     <div className="screen">
       <Header title="표현 찾기" back={false} center />
       <GoLink to="/books/rabbit" aria-label="표현 찾기 완료, 단어 카드 보기" className="content center"
-        onClick={(e) => { if (live) e.preventDefault(); }}
+        onClick={(e) => { if (!USE_MOCK) e.preventDefault(); }}
         style={{ gap: 22, padding: '0 0 80px', textDecoration: 'none', color: 'var(--text)' }}>
         <div style={{ width: 148, height: 148, borderRadius: 44, background: 'var(--mint-soft)', display: 'grid', placeItems: 'center' }}>
           <span className="mw mw-hop loop" aria-hidden="true" style={{ fontSize: 40, fontWeight: 800, color: 'var(--primary)', letterSpacing: 4 }}>

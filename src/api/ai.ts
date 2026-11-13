@@ -164,6 +164,9 @@ const ttsCache: Map<string, TtsEntry> = (() => {
 })();
 const ttsInflight = new Map<string, Promise<string>>();
 
+/** 이 문장의 서버 음성을 이미 받아 두었는지 */
+export const hasCachedSpeech = (text: string) => !!cachedUrl(text);
+
 function cachedUrl(text: string): string | undefined {
   const e = ttsCache.get(text);
   if (!e) return undefined;

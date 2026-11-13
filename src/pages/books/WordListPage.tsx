@@ -85,7 +85,7 @@ export function WordListPage() {
                     </span>
                   </div>
                   <span style={{ fontSize: 13, fontWeight: 500, lineHeight: 1.45 }}>{w.meaning}</span>
-                  {shortMeaningTr(w, lang) && <span style={{ fontSize: 12, color: 'var(--text-sub)' }}>{shortMeaningTr(w, lang)}</span>}
+                  {shortMeaningTr(w, lang, book.id) && <span style={{ fontSize: 12, color: 'var(--text-sub)' }}>{shortMeaningTr(w, lang, book.id)}</span>}
                 </div>
               </GoLink>
               <CardSpeak text={w.text} />

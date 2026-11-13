@@ -25,6 +25,17 @@ export default function App() {
   useEffect(() => recordEntry(loc.pathname + loc.search), [loc]);
   // 로그인(아이 등록)이 되면 시연용 동화책 단어를 서버 단어와 연결한다 → 예시 책에서도 AI 기능 사용
   useEffect(() => { loadDemoVocab(); }, [profile.childId]);
+  // 로그인 토큰이 나중에 저장돼도(온보딩 8초 초과 등) 시연용 단어 연결을 다시 시도
+  useEffect(() => {
+    const on = () => { loadDemoVocab(); };
+    window.addEventListener('booktalk:auth', on);
+    return () => window.removeEventListener('booktalk:auth', on);
+  }, []);
+  // 기본 정보를 입력하기 전에는 온보딩으로 (링크로 바로 들어오면 예시 프로필로 서버에 아이가 등록되던 문제).
+  // 디자인 확인용 화면 미리보기(?demo=)는 그대로 보여 준다.
+  const needOnboarding = !profile.onboarded && loc.pathname !== '/' && !loc.pathname.startsWith('/onboarding')
+    && !new URLSearchParams(loc.search).has('demo');
+  if (needOnboarding) return <div className="app"><Navigate to="/onboarding" replace /></div>;
   return (
     <div className="app">
       <Routes>
@@ -43,7 +54,7 @@ export default function App() {
         <Route path="/words/:wordId/practice/reviewing" element={<PracticeReviewingPage profile={profile} onSave={setProfile} />} />
         <Route path="/words/:wordId/practice/feedback" element={<PracticeFeedbackPage />} />
         <Route path="/words/:wordId/talk" element={<TalkIntroPage profile={profile} />} />
-        <Route path="/words/:wordId/talk/chat" element={<TalkChatPage profile={profile} />} />
+        <Route path="/words/:wordId/talk/chat" element={<TalkChatPage profile={profile} onSave={setProfile} />} />
         <Route path="/words/:wordId/talk/complete" element={<TalkCompletePage profile={profile} />} />
         <Route path="*" element={<Navigate to="/home" replace />} />
       </Routes>
