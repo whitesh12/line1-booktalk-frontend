@@ -37,3 +37,6 @@
 @media (prefers-reduced-motion: reduce) {
   .mw, .mw > span, .mw::after { animation: none !important; opacity: 1 !important; }
 }
+
+/* 촬영 순간 하얗게 번쩍 */
+@keyframes shutter-flash { from { opacity: .85; } to { opacity: 0; } }
