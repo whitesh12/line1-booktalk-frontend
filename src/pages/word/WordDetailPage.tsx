@@ -3,7 +3,8 @@ import { useParams, useSearchParams } from 'react-router-dom';
 import { GoLink } from '../../lib/nav';
 import { AnimWord, Header, Highlight, Icon, speak, TabBar } from '../../components/ui';
 import { BOOKS, WORDS, bookById, sceneFor, type Word } from '../../data/content';
-import { DETAIL, guideFor, wordVi, type GuideStep } from '../../data/wordDetail';
+import { DETAIL, guideFor, type GuideStep } from '../../data/wordDetail';
+import { currentLang, detailRowTr, langOf, meaningTr, nuanceTr } from '../../data/translations';
 import { serverVocabId } from '../../data/scanned';
 import { USE_MOCK, hasToken } from '../../api/client';
 import { cachedVocabulary, fetchVocabulary, trackLearning, type VocabDetail } from '../../api/ai';
@@ -41,17 +42,22 @@ export function WordDetailPage() {
   const [q] = useSearchParams();
   const base = WORDS[wordId] ?? WORDS.dugeun;
   const { ai, loading: aiLoading } = useAiVocabulary(base.id);
+  // 번역은 '지금 설정한 설명 언어'로만 보여 준다. AI 번역도 언어가 같을 때만 쓰고, 아니면 앱에 있는 번역 (없으면 숨김)
+  const lang = currentLang();
+  const aiTr = ai?.translation && langOf(ai.translation.language) === lang ? ai.translation.text : undefined;
+  const tr = aiTr ?? meaningTr(base, lang);
+  const rowTr = detailRowTr(base, lang);
   // AI 설명이 있으면 글 내용은 AI 것으로 바꾸고, 그림·움직임은 그대로 쓴다.
   const w: Word = ai ? {
     ...base,
     meaning: ai.definition || base.meaning,
-    vi: ai.translation?.text ?? base.vi,
+    vi: tr ?? '',
     nuance: ai.childExplanation || base.nuance,
     nuanceVi: '',
     usage: ai.usageSituations?.length ? ai.usageSituations.map((text) => ({ label: '•', text })) : base.usage,
     similar: [],
     examples: ai.practiceExample ? [ai.practiceExample] : base.examples,
-  } : base;
+  } : { ...base, vi: tr ?? '', nuanceVi: nuanceTr(base, lang) ?? '' };
   const aiSimilar = ai?.similarExpressions ?? [];
   const book = bookById(q.get('book') ?? undefined) ?? BOOKS.find((b) => b.wordIds.includes(w.id));
   const scene = sceneFor(w, book);
@@ -64,8 +70,8 @@ export function WordDetailPage() {
   ] : guideFor(w);
   const sectionTitle = { margin: 0, fontSize: 14, fontWeight: 700, color: 'var(--primary)' } as const;
   const rows = [
-    { text: w.text, feel: extra.feel ?? w.nuance.split('.')[0], vi: extra.feelVi, when: w.usage[0]?.label ?? '' },
-    ...w.similar.map((s, i) => ({ ...s, vi: extra.similarVi?.[i] })),
+    { text: w.text, feel: extra.feel ?? w.nuance.split('.')[0], vi: rowTr.feel, when: w.usage[0]?.label ?? '' },
+    ...w.similar.map((s, i) => ({ ...s, vi: rowTr.similar[i] })),
   ];
 
   return (
@@ -88,7 +94,7 @@ export function WordDetailPage() {
             {aiLoading && <span style={{ fontSize: 12, color: 'var(--text-sub)' }}>AI 설명을 불러오는 중…</span>}
           </div>
           <p style={{ margin: 0, fontSize: 19, fontWeight: 700, lineHeight: 1.5 }}>{w.meaning}</p>
-          <p style={{ margin: 0, fontSize: 14, color: 'var(--text-sub)' }}>{ai ? w.vi : wordVi(w)}</p>
+          {tr && <p style={{ margin: 0, fontSize: 14, color: 'var(--text-sub)' }}>{tr}</p>}
         </section>
 
         <section className="card" style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>

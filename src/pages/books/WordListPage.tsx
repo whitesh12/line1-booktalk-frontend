@@ -2,11 +2,19 @@ import { useParams } from 'react-router-dom';
 import { GoLink } from '../../lib/nav';
 import { AnimWord, Header, Icon, TabBar, TypeTag, speak } from '../../components/ui';
 import { BOOKS, WORDS, bookById } from '../../data/content';
+import { SCAN_BOOK_ID, scanLanguage } from '../../data/scanned';
+import { currentLang, langOf, shortMeaningTr } from '../../data/translations';
+
+const LANG_NAME = { vi: '베트남어', zh: '중국어', en: '영어' } as const;
 
 export function WordListPage() {
   const { bookId } = useParams();
   const book = bookById(bookId) ?? BOOKS[0];
   const words = book.wordIds.map((id) => WORDS[id]);
+  const lang = currentLang();
+  // 찍은 페이지가 예전 설명 언어로 분석된 경우 (번역은 분석할 때의 언어로 만들어진다)
+  const scanned = scanLanguage();
+  const staleLang = book.id === SCAN_BOOK_ID && !!scanned && langOf(scanned) !== lang;
   return (
     <div className="screen">
       <Header title={`이 페이지의 표현 (${words.length})`} to="/books" />
@@ -15,6 +23,11 @@ export function WordListPage() {
           <span className="pill" style={{ background: '#fff', border: '1px solid var(--border)', padding: '6px 12px', fontSize: 13, color: 'var(--text-body)' }}>{Icon.book(16)}{book.title}{book.page && ` · ${book.page}`}</span>
           <span style={{ fontSize: 13, color: 'var(--text-sub)' }}>카드를 눌러 배워요</span>
         </div>
+        {staleLang && (
+          <p role="status" style={{ margin: 0, padding: '10px 14px', borderRadius: 14, background: '#FFF6E5', color: '#8A5A00', fontSize: 13, lineHeight: 1.5 }}>
+            설명 언어를 바꿨어요. 이 페이지를 다시 찍으면 {LANG_NAME[lang]}로 번역된 설명을 볼 수 있어요.
+          </p>
+        )}
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, minmax(0, 1fr))', gap: 12 }}>
           {words.map((w) => (
             <div key={w.id} style={{ position: 'relative' }}>
@@ -30,7 +43,7 @@ export function WordListPage() {
                     </span>
                   </div>
                   <span style={{ fontSize: 13, fontWeight: 500, lineHeight: 1.45 }}>{w.meaning}</span>
-                  <span style={{ fontSize: 12, color: 'var(--text-sub)' }}>{w.vi}</span>
+                  {shortMeaningTr(w, lang) && <span style={{ fontSize: 12, color: 'var(--text-sub)' }}>{shortMeaningTr(w, lang)}</span>}
                 </div>
               </GoLink>
               <button aria-label={`${w.text} 듣기`} onClick={() => speak(w.text)}

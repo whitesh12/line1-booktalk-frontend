@@ -39,6 +39,13 @@ export function serverVocabId(wordId: string, bookId = new URLSearchParams(locat
   return vocabIds[wordId] ?? Object.values(demoIds).find((m) => m[wordId])?.[wordId];
 }
 
+/** 사진 분석에서 서버가 준 단어별 번역 (언어 포함) */
+let scanTr: Record<string, { language: string; text: string }> = {};
+/** 사진 분석 결과의 번역 언어 (분석할 때 아이 설명 언어) */
+let scanLang: string | null = null;
+export const scanTranslation = (wordId: string) => scanTr[wordId];
+export const scanLanguage = () => scanLang;
+
 /**
  * 촬영·분석 결과를 화면 데이터에 합친다.
  * 내장 단어와 글자가 같으면 내장 카드(그림·뜻풀이)를 그대로 쓰고 서버 id만 연결하고,
@@ -46,12 +53,15 @@ export function serverVocabId(wordId: string, bookId = new URLSearchParams(locat
  */
 function apply(scan: SavedScan) {
   vocabIds = {};
+  scanTr = {};
+  scanLang = scan.expressions.find((e) => e.translation?.language)?.translation?.language ?? null;
   const scenes: Record<string, string> = {};
   const wordIds = scan.expressions.map((e) => {
     const local = Object.values(WORDS).find((w) => w.text === e.text && !w.id.startsWith('exp_'));
+    // 번역은 단어 카드에 넣지 않고 '언어와 함께' 따로 기억한다 → 설정 언어와 같을 때만 보여 준다.
     const word: Word = local ?? {
       id: e.id, text: e.text, type: TYPE[e.type] ?? '의태어', motion: null,
-      meaning: e.definition, vi: e.translation?.text ?? '',
+      meaning: e.definition, vi: '',
       nuance: e.definition, nuanceVi: '', usage: [],
       examples: e.sourceSentence ? [e.sourceSentence] : [], similar: [],
       tip: `그림책을 다시 보며 ‘${e.text}’이 나온 장면을 아이와 함께 찾아 보세요.`,
@@ -59,6 +69,7 @@ function apply(scan: SavedScan) {
     };
     WORDS[word.id] = word;
     vocabIds[word.id] = e.id;
+    if (e.translation?.text) scanTr[word.id] = e.translation;
     if (e.sourceSentence) scenes[word.id] = e.sourceSentence;
     return word.id;
   });

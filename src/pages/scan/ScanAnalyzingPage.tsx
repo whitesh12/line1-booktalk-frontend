@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { GoLink, useGo } from '../../lib/nav';
 import { Header, TabBar } from '../../components/ui';
-import { ApiError, USE_MOCK, analyzePhoto, isTransientAiError, withChild } from '../../api/client';
+import { ApiError, USE_MOCK, analyzePhoto, isTransientAiError, setChildLanguage, withChild } from '../../api/client';
 import { SCAN_BOOK_ID, peekPendingPhoto, saveScan, setPendingPhoto } from '../../data/scanned';
 import type { Profile } from '../../store/profile';
 
@@ -25,7 +25,8 @@ export function ScanAnalyzingPage({ profile, onSave }: { profile: Profile; onSav
   useEffect(() => {
     if (!live || !photo) return;
     const ctrl = new AbortController();
-    const run = (childId: string) => analyzePhoto(photo, childId, ctrl.signal)
+    const run = (childId: string) => setChildLanguage(childId, profile.lang) // 번역이 지금 설정한 설명 언어로 나오게
+      .then(() => analyzePhoto(photo, childId, ctrl.signal))
       // AI 서버가 깨어나는 중이면 첫 분석이 금방 실패할 수 있어, 잠깐 기다렸다가 한 번 더 해 본다.
       .catch(async (e) => {
         if (!isTransientAiError(e) || ctrl.signal.aborted) throw e;

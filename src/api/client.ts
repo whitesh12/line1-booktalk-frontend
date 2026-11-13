@@ -263,6 +263,12 @@ async function childExists(id: string): Promise<boolean> {
 }
 
 /** 설정에서 설명 언어를 바꾸면 서버의 아이 정보에도 반영한다. (분석 결과 번역 언어가 이걸 따른다) */
+/** 아이의 설명 언어를 서버에 맞춘다. 사진 분석 번역이 이 언어로 만들어지므로 분석 직전에 부른다. */
+export async function setChildLanguage(childId: string, lang: Profile['lang']): Promise<void> {
+  if (USE_MOCK) return;
+  await request(`/children/${childId}`, { method: 'PATCH', body: JSON.stringify({ explanationLanguage: LANGUAGE[lang] }) });
+}
+
 export async function syncChildLanguage(p: Profile): Promise<void> {
   if (USE_MOCK || !p.childId || !store.get(TOKEN_KEY)) return;
   await request(`/children/${p.childId}`, {

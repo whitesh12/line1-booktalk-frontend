@@ -2,7 +2,7 @@ import { Navigate, useLocation } from 'react-router-dom';
 import { Header, Highlight, Icon, TabBar } from '../../components/ui';
 import { GoLink } from '../../lib/nav';
 import { mockSentenceFeedback, type SentenceFeedback } from '../../api/client';
-import { wordVi } from '../../data/wordDetail';
+import { meaningTr } from '../../data/translations';
 import { DEMO_SENTENCE, cardPad, setDraft, usePracticeWord } from './shared';
 
 export function PracticeFeedbackPage() {
@@ -72,7 +72,7 @@ export function PracticeFeedbackPage() {
             <p className="card-label teal" style={{ margin: 0 }}>‘{w.text}’은 이런 뜻이에요</p>
             <p style={{ margin: 0, fontSize: 16, fontWeight: 700, lineHeight: 1.55 }}>{w.meaning}</p>
             <p style={{ margin: 0, fontSize: 14, lineHeight: 1.6, color: 'var(--text-body)' }}>{fb.explain ?? w.nuance}</p>
-            <p style={{ margin: 0, fontSize: 13, color: 'var(--text-sub)' }}>{wordVi(w)}</p>
+            {meaningTr(w) && <p style={{ margin: 0, fontSize: 13, color: 'var(--text-sub)' }}>{meaningTr(w)}</p>}
           </div>
         )}
         {fb.suggested && fb.kind === 'polish' && (
