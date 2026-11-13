@@ -17,6 +17,8 @@
 .mw-gulp.loop > span, :is(a, button):is(:hover, :active, :focus-visible) .mw-gulp.hover > span { animation: mwGulp 1.8s ease-in-out infinite; }
 .mw-struggle.loop > span, :is(a, button):is(:hover, :active, :focus-visible) .mw-struggle.hover > span { animation: mwStruggle .5s ease-in-out infinite; }
 .mw-heave.loop, :is(a, button):is(:hover, :active, :focus-visible) .mw-heave.hover { animation: mwHeave 1.4s ease-in-out infinite; }
+/* 눈이 휘둥그레지다: 글자가 차례로 커졌다 돌아온다 (놀라서 눈이 커지는 느낌) */
+.mw-widen.loop > span, :is(a, button):is(:hover, :active, :focus-visible) .mw-widen.hover > span { animation: mwWiden 2.2s ease-in-out infinite; }
 
 @keyframes mwBeat { 0%, 45%, 100% { transform: scale(1); } 12% { transform: scale(1.13); } 24% { transform: scale(1.03); } 33% { transform: scale(1.15); } }
 @keyframes mwTw { 0%, 100% { opacity: 1; text-shadow: 0 0 .25em #F7C948; } 50% { opacity: .35; text-shadow: none; } }
@@ -32,6 +34,7 @@
 @keyframes mwWave { 0%, 100% { transform: translateY(-.12em); } 50% { transform: translateY(.12em); } }
 @keyframes mwGulp { 0%, 50%, 100% { transform: none; } 62% { transform: scale(1.12, .82) translateY(.08em); } 78% { transform: translateY(.14em); } }
 @keyframes mwStruggle { 0%, 100% { transform: translateX(0) rotate(0); } 25% { transform: translateX(-.05em) rotate(-4deg); } 75% { transform: translateX(.05em) rotate(4deg); } }
+@keyframes mwWiden { 0%, 45%, 100% { transform: none; } 12% { transform: scale(1.16) translateY(-.05em); } 24% { transform: scale(.98); } 32% { transform: scale(1.04); } }
 @keyframes mwHeave { 0%, 60%, 100% { transform: translateY(0) scale(1); } 30% { transform: translateY(-.18em) scale(1.06); } }
 
 @media (prefers-reduced-motion: reduce) {

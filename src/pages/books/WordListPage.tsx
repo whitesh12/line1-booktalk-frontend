@@ -70,7 +70,7 @@ export function WordListPage() {
                 <div style={{ display: 'flex', flexDirection: 'column', gap: 3, padding: '0 4px' }}>
                   <div style={{ display: 'flex', alignItems: 'center', minHeight: 28, paddingRight: 34 }}>
                     <span style={{ fontWeight: 800, letterSpacing: '-0.02em', fontSize: w.text.length > 5 ? 15 : 19, lineHeight: 1.3 }}>
-                      <AnimWord text={w.text} motion={w.motion} />
+                      <AnimWord text={w.text} motion={w.motion} mode="loop" />
                     </span>
                   </div>
                   <span style={{ fontSize: 13, fontWeight: 500, lineHeight: 1.45 }}>{w.meaning}</span>

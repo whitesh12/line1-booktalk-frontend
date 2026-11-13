@@ -99,7 +99,7 @@ function applyAll() {
       const local = Object.values(WORDS).find((w) => w.text === e.text && !w.id.startsWith('exp_'));
       // 번역은 단어 카드에 넣지 않고 '언어와 함께' 따로 기억한다 → 설정 언어와 같을 때만 보여 준다.
       const word: Word = local ?? {
-        id: e.id, text: e.text, type: TYPE[e.type] ?? '의태어', motion: null,
+        id: e.id, text: e.text, type: TYPE[e.type] ?? '의태어', motion: 'wave', // 처음 보는 단어도 움직임이 보이게
         meaning: e.definition, vi: '',
         nuance: e.definition, nuanceVi: '', usage: [],
         examples: e.sourceSentence ? [e.sourceSentence] : [], similar: [],

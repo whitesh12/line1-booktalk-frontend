@@ -1,7 +1,7 @@
 export type WordType = '의태어' | '의성어' | '관용 표현' | '감탄사';
 export type Motion =
   | 'beat' | 'drop' | 'sob' | 'twinkle' | 'hop' | 'tiptoe' | 'roll'
-  | 'splash' | 'crawl' | 'nod' | 'wave' | 'gulp' | 'struggle' | 'heave' | null;
+  | 'splash' | 'crawl' | 'nod' | 'wave' | 'gulp' | 'struggle' | 'heave' | 'widen' | null;
 
 export interface Similar { text: string; feel: string; when: string; sample?: string; }
 export interface Word {
@@ -74,7 +74,7 @@ export const WORDS: Record<string, Word> = {
     image: img('banjjak.jpg'),
   },
   nuni: {
-    id: 'nuni', text: '눈이 휘둥그레지다', type: '관용 표현', motion: null,
+    id: 'nuni', text: '눈이 휘둥그레지다', type: '관용 표현', motion: 'widen',
     meaning: '깜짝 놀라서 눈을 크게 뜨다', vi: 'Mắt tròn xoe',
     nuance: '놀라거나 신기한 것을 봤을 때 써요.', nuanceVi: 'Mở to mắt vì ngạc nhiên',
     usage: [{ label: '깜짝 선물', text: '생각지 못한 선물을 받았어요' }],

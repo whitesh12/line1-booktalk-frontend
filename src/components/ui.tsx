@@ -74,14 +74,16 @@ export function TabBar({ onLeave }: { onLeave?: (leave: () => void) => void }) {
   );
 }
 
-const STAGGER: Partial<Record<NonNullable<Motion>, number>> = { twinkle: 0.37, tiptoe: 0.25, sob: 0.2 };
+const NBSP = String.fromCharCode(0xa0);
+const STAGGER: Partial<Record<NonNullable<Motion>, number>> = { twinkle: 0.37, tiptoe: 0.25, sob: 0.2, widen: 0.07 };
 export function AnimWord({ text, motion, mode = 'hover' }: { text: string; motion: Motion; mode?: 'loop' | 'hover' | 'none' }) {
   if (!motion || mode === 'none') return <>{text}</>;
   const step = STAGGER[motion] ?? 0.13;
   return (
     <span className={`mw mw-${motion} ${mode}`} aria-label={text}>
       {[...text].map((ch, i) => (
-        <span key={i} aria-hidden="true" style={{ animationDelay: `${(i * step).toFixed(2)}s` }}>{ch}</span>
+        // 글자마다 inline-block 이라 일반 공백은 폭이 0이 된다 → 띄어쓰기는 줄바꿈 없는 공백으로
+        <span key={i} aria-hidden="true" style={{ animationDelay: `${(i * step).toFixed(2)}s` }}>{ch === ' ' ? NBSP : ch}</span>
       ))}
     </span>
   );
