@@ -20,12 +20,15 @@ export function OnboardingPage({ profile, onSave }: { profile: Profile; onSave: 
     const empty = !draft.parentName.trim() ? 'parentName' : !draft.childName.trim() ? 'childName' : null;
     if (empty) { document.getElementById(empty)?.focus(); return; }
     setSaving(true);
-    let childId = draft.childId;
+    // 글자 수 제한은 입력칸(maxLength)에 걸지 않고 저장할 때 맞춘다.
+    // (아이폰 사파리 등은 maxLength 가 있으면 한글 조합이 끊겨 '민준'이 '미니준'으로 입력되는 문제가 있다)
+    const clean = { ...draft, parentName: draft.parentName.trim(), childName: draft.childName.trim().slice(0, 20) };
+    let childId = clean.childId;
     // 서버가 느리면(무료 서버 깨어나는 중 등) 8초까지만 기다리고 넘어간다.
     // 못 받은 childId 는 첫 촬영 때 다시 맞춘다 (이미 등록된 아이가 있으면 그 아이를 쓴다).
     const timeout = new Promise<undefined>((r) => setTimeout(() => r(undefined), 8000));
-    try { childId = (await Promise.race([registerProfile(draft), timeout])) ?? childId; } catch {}
-    onSave({ ...draft, childId, onboarded: true });
+    try { childId = (await Promise.race([registerProfile(clean), timeout])) ?? childId; } catch {}
+    onSave({ ...clean, childId, onboarded: true });
     go('/onboarding/privacy');
   }
 
@@ -47,7 +50,7 @@ export function OnboardingPage({ profile, onSave }: { profile: Profile; onSave: 
         </div>
         <div className="field">
           <label htmlFor="childName">아이 이름</label>
-          <input id="childName" className="input" maxLength={20} placeholder="예: 민준" value={draft.childName} onChange={(e) => set({ childName: e.target.value })} />
+          <input id="childName" className="input" placeholder="예: 민준" value={draft.childName} onChange={(e) => set({ childName: e.target.value })} />
         </div>
         <div className="field" style={{ gap: 10 }}>
           <span className="label">설명 언어</span>

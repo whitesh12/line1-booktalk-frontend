@@ -36,7 +36,7 @@ export function WordListPage() {
             <form className="pill" onSubmit={(e) => { e.preventDefault(); save(); }}
               style={{ flex: 1, minWidth: 0, background: '#fff', border: '1.5px solid var(--primary)', padding: '3px 4px 3px 12px', fontSize: 13, color: 'var(--text-body)' }}>
               {Icon.book(16)}
-              <input ref={inputRef} aria-label="책 이름" value={draft} maxLength={30} onChange={(e) => setDraft(e.target.value)}
+              <input ref={inputRef} aria-label="책 이름" value={draft} onChange={(e) => setDraft(e.target.value)}
                 onBlur={save} onKeyDown={(e) => { if (e.key === 'Escape') { e.preventDefault(); setEditing(false); } }}
                 style={{ flex: 1, minWidth: 0, border: 0, outline: 'none', background: 'transparent', font: 'inherit', fontWeight: 700, color: 'var(--text)', padding: '4px 0' }} />
               <button type="submit" aria-label="이름 저장" onMouseDown={(e) => e.preventDefault()}

@@ -3,10 +3,13 @@ import { Header, Icon, TabBar } from '../../components/ui';
 import { useGo } from '../../lib/nav';
 import { LOCAL_CSS, readDraft, setDraft, usePracticeWord } from './shared';
 
+const MAX_SENTENCE = 100; // 서버 문장 연습 제한
+
 export function PracticeWritePage() {
   const { w, qs } = usePracticeWord();
   const go = useGo();
   const [text, setText] = useState(() => readDraft(w.id));
+  const tooLong = text.trim().length > MAX_SENTENCE;
   useEffect(() => setDraft(w.id, null), [w.id]);
   const josa = /[가-힣]$/.test(w.text) && (w.text.charCodeAt(w.text.length - 1) - 0xac00) % 28 ? '을' : '를';
   return (
@@ -21,12 +24,14 @@ export function PracticeWritePage() {
         </div>
         <div className="field">
           <label htmlFor="sentence">내 문장</label>
-          <textarea id="sentence" className="textarea" style={{ height: 170 }}maxLength={100} placeholder="여기에 직접 문장을 입력해 보세요" value={text} onChange={(e) => setText(e.target.value)} />
+          {/* maxLength 를 쓰지 않는다: 아이폰 등에서 한글 조합이 끊기는 문제가 있어 길이는 '완료'를 누를 때 확인한다 */}
+          <textarea id="sentence" className="textarea" style={{ height: 170 }} placeholder="여기에 직접 문장을 입력해 보세요" value={text} onChange={(e) => setText(e.target.value)} />
+          {tooLong && <span role="alert" style={{ fontSize: 13, color: 'var(--coral)' }}>문장은 {MAX_SENTENCE}자까지 쓸 수 있어요. (지금 {text.trim().length}자)</span>}
         </div>
         <button type="button" className="btn btn-soft" onClick={() => alert('음성 입력은 준비 중이에요.')}>{Icon.mic(18)}마이크로 입력</button>
       </div>
       <div className="bottom-bar">
-        <button className="btn btn-primary" onClick={() => (text.trim() ? go(`/words/${w.id}/practice/reviewing${qs}`, { state: { sentence: text } }) : document.getElementById('sentence')?.focus())}>완료</button>
+        <button className="btn btn-primary" onClick={() => (text.trim() && !tooLong ? go(`/words/${w.id}/practice/reviewing${qs}`, { state: { sentence: text } }) : document.getElementById('sentence')?.focus())}>완료</button>
       </div>
       <TabBar />
     </div>
