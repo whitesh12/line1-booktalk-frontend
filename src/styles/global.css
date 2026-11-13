@@ -64,6 +64,8 @@ a { color: var(--primary); }
 .btn-navy { background: var(--navy); color: #fff; }
 .btn-soft { background: var(--mint-soft); color: var(--primary-dark); border: 1.5px solid var(--mint-line); height: 52px; font-size: 16px; }
 .bottom-bar { flex: none; display: flex; gap: 10px; padding: 12px 20px 28px; }
+/* 하단 탭 바 바로 위에 붙어 있는 버튼 줄 (긴 화면에서도 버튼이 탭 바 뒤로 가려지지 않게). 아이폰 홈 바 여백만큼 더 띄운다 */
+.bottom-bar.sticky { position: sticky; bottom: calc(72px + env(safe-area-inset-bottom, 0px)); z-index: 4; background: var(--bg); padding-bottom: 16px; }
 
 .card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius-card); padding: 18px; }
 .card.selected { border: 2px solid var(--primary); }

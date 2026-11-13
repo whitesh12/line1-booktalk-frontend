@@ -169,7 +169,7 @@ export function WordDetailPage() {
           </section>
         ))}
       </div>
-      <div className="bottom-bar" style={{ background: '#fff', borderTop: '1px solid var(--border)', position: 'sticky', bottom: 72 }}>
+      <div className="bottom-bar sticky" style={{ background: '#fff', borderTop: '1px solid var(--border)' }}>
         <GoLink to={`/words/${w.id}/practice${book ? `?book=${book.id}` : ''}`} className="btn btn-primary">{Icon.pencil()}문장 연습</GoLink>
       </div>
       <TabBar />

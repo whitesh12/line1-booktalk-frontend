@@ -37,7 +37,7 @@ export function PracticeFeedbackPage() {
             </div>
           )}
         </div>
-        <div className="bottom-bar">
+        <div className="bottom-bar sticky">
           <GoLink to={`/words/${w.id}/practice${qs}`} onClick={() => setDraft(w.id, null)} className="btn btn-outline" style={{ fontSize: 16 }}>한번 더 연습</GoLink>
           <GoLink to={`/words/${w.id}/talk${qs}`} className="btn btn-primary" style={{ fontSize: 16 }}>대화 연습</GoLink>
         </div>
@@ -83,7 +83,7 @@ export function PracticeFeedbackPage() {
           {fb.tips.map((t) => <p key={t}>{t}</p>)}
         </div>
       </div>
-      <div className="bottom-bar">
+      <div className="bottom-bar sticky">
         {meaning && <GoLink to={`/words/${w.id}${qs}`} className="btn btn-outline" style={{ fontSize: 16 }}>뜻 다시 보기</GoLink>}
         <GoLink to={`/words/${w.id}/practice${qs}`} onClick={() => setDraft(w.id, fb.original)} className="btn btn-primary" style={meaning ? { fontSize: 16 } : undefined}>{Icon.pencil(meaning ? 18 : 20)}다시 써 보기</GoLink>
       </div>
