@@ -66,7 +66,12 @@ npm run build      # dist/ 생성
   - 결과는 `/books/scan`(내가 찍은 그림책)에 표시되고 새로고침해도 남아 있어요. 내장 단어와 글자가 같으면 내장 카드를 그대로 써요.
   - 백엔드가 재시작되어(H2 메모리 DB) 계정이 사라졌으면 게스트 로그인·아이 등록을 다시 하고 재시도해요.
 - 연결됨: 문장 첨삭 → `POST /children/{childId}/sentence-practices` (촬영·분석한 단어만. 내장 예시 단어는 서버에 없어서 모의 응답)
-- 아직 모의 응답: 대화, 음성(TTS는 브라우저 내장 음성 사용), AI 근거 답변
+- 연결됨(사진으로 찾은 단어): 단어 상세 AI 설명 → `GET /vocabulary/{id}` (화면에 'AI 설명' 표시, 브라우저에 저장해 두고 다시 씀)
+- 연결됨(사진으로 찾은 단어): 아이와 대화 → `POST /children/{childId}/conversation-sessions`, `POST /conversation-sessions/{id}/messages`, `POST .../complete`
+  - 진행 중인 대화가 있으면 서버가 새 대화를 막아서(409), 시작한 대화를 기억해 두었다가 화면을 떠날 때·다음 시작 전에 끝내요.
+  - AI 연결이 안 되면 연습용 대화(예시 대사)로 진행하고 안내 문구를 보여 줘요.
+- 연결됨: 읽어 주기 → `POST /speech/synthesis` 후 음성 파일 재생 (빠르기는 재생 속도로 적용). 3.5초 안에 안 오면 브라우저 음성으로 대신하고, 다음엔 서버 음성으로 나와요.
+- 아직 예시 데이터: 홈, 동화책 4권과 그 단어들(서버에 없는 단어라 대화·첨삭은 연습용), AI 근거 답변
 
 명세서와 실제 백엔드 코드가 다른 부분은 코드 기준으로 맞췄어요: 관계는 `MOTHER|FATHER|GUARDIAN`, 언어는 `vi|zh-CN|en`, 문장 연습 `inputMethod`는 `KEYBOARD|SPEECH`.
 

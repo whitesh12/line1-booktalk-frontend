@@ -3,6 +3,7 @@ import { useLocation } from 'react-router-dom';
 import type { Motion, WordType } from '../data/content';
 import { useBack, useGo } from '../lib/nav';
 import { loadProfile } from '../store/profile';
+import { canUseServerTts, prefetchSpeech, synthesize } from '../api/ai';
 
 const S = { fill: 'none', stroke: 'currentColor', strokeWidth: 2, strokeLinecap: 'round', strokeLinejoin: 'round' } as const;
 export const Icon = {
@@ -109,12 +110,41 @@ export function KidMessage({ name, children }: { name: string; children: ReactNo
   );
 }
 
-/** 읽어 주기. 속도를 따로 주지 않으면 내 정보의 '음성 안내 속도'를 따른다. */
-export function speak(text: string, rate = Number(loadProfile().speed) || 1) {
+function browserSpeak(text: string, rate: number) {
   if (!('speechSynthesis' in window)) return;
   window.speechSynthesis.cancel();
   const u = new SpeechSynthesisUtterance(text);
   u.lang = 'ko-KR';
   u.rate = rate * 0.9;
   window.speechSynthesis.speak(u);
+}
+
+// 휴대폰(특히 iPhone)은 '누른 순간'에 재생을 시작한 오디오만 나중에 소리를 낼 수 있어서,
+// 하나의 오디오를 누르는 순간 무음으로 깨워 두고 서버 음성이 오면 그걸로 재생한다.
+const SILENCE = 'data:audio/wav;base64,UklGRiQAAABXQVZFZm10IBAAAAABAAEAQB8AAEAfAAABAAgAZGF0YQAAAAA=';
+let player: HTMLAudioElement | null = null;
+let speakSeq = 0;
+
+/** 읽어 주기. 서버 음성(AI)을 쓰고, 느리거나 안 되면 브라우저 음성으로 대신한다. 속도는 내 정보 설정을 따른다. */
+export function speak(text: string, rate = Number(loadProfile().speed) || 1) {
+  if (!canUseServerTts()) { browserSpeak(text, rate); return; }
+  const seq = ++speakSeq; // 연달아 누르면 마지막 것만 재생
+  player ??= new Audio();
+  const audio = player;
+  window.speechSynthesis?.cancel();
+  audio.pause();
+  audio.src = SILENCE;
+  audio.play().catch(() => {});
+  synthesize(text)
+    .then((url) => {
+      if (seq !== speakSeq) return;
+      audio.src = url;
+      audio.playbackRate = rate; // 서버는 같은 파일을 주고 빠르기는 재생할 때 바꾼다
+      return audio.play();
+    })
+    .catch(() => {
+      if (seq !== speakSeq) return;
+      browserSpeak(text, rate);
+      prefetchSpeech(text); // 다음에는 서버 음성으로 바로 나오게
+    });
 }

@@ -1,9 +1,12 @@
-import { Fragment } from 'react';
+import { Fragment, useEffect, useState } from 'react';
 import { useParams, useSearchParams } from 'react-router-dom';
 import { GoLink } from '../../lib/nav';
 import { AnimWord, Header, Highlight, Icon, speak, TabBar } from '../../components/ui';
-import { BOOKS, WORDS, bookById, sceneFor } from '../../data/content';
-import { DETAIL, guideFor, wordVi } from '../../data/wordDetail';
+import { BOOKS, WORDS, bookById, sceneFor, type Word } from '../../data/content';
+import { DETAIL, guideFor, wordVi, type GuideStep } from '../../data/wordDetail';
+import { serverVocabId } from '../../data/scanned';
+import { USE_MOCK, hasToken } from '../../api/client';
+import { cachedVocabulary, fetchVocabulary, type VocabDetail } from '../../api/ai';
 
 function Bold({ text, word }: { text: string; word: string }) {
   const stem = word.split(' ')[0];
@@ -13,13 +16,50 @@ function Bold({ text, word }: { text: string; word: string }) {
 
 const exprFont = { fontWeight: 800, letterSpacing: '-0.02em', fontSize: 19 } as const;
 const grid = { display: 'grid', gridTemplateColumns: '96px minmax(0, 1fr) 96px', gap: 8 } as const;
+/** 사진으로 찾은 단어면 서버(AI)가 만든 단어 설명을 불러온다. */
+function useAiVocabulary(wordId: string) {
+  const vocabId = serverVocabId(wordId);
+  const usable = !!vocabId && !USE_MOCK && hasToken();
+  const [ai, setAi] = useState<VocabDetail | undefined>(() => (usable ? cachedVocabulary(vocabId!) : undefined));
+  const [loading, setLoading] = useState(false);
+  useEffect(() => {
+    if (!usable) { setAi(undefined); return; }
+    let alive = true;
+    setAi(cachedVocabulary(vocabId!));
+    setLoading(true);
+    fetchVocabulary(vocabId!)
+      .then((v) => { if (alive) setAi(v); })
+      .catch((e) => console.warn('[vocabulary] AI 단어 설명을 불러오지 못했어요', e))
+      .finally(() => { if (alive) setLoading(false); });
+    return () => { alive = false; };
+  }, [vocabId, usable]);
+  return { ai, loading: loading && !ai };
+}
+
 export function WordDetailPage() {
   const { wordId = 'dugeun' } = useParams();
   const [q] = useSearchParams();
-  const w = WORDS[wordId] ?? WORDS.dugeun;
+  const base = WORDS[wordId] ?? WORDS.dugeun;
+  const { ai, loading: aiLoading } = useAiVocabulary(base.id);
+  // AI 설명이 있으면 글 내용은 AI 것으로 바꾸고, 그림·움직임은 그대로 쓴다.
+  const w: Word = ai ? {
+    ...base,
+    meaning: ai.definition || base.meaning,
+    vi: ai.translation?.text ?? base.vi,
+    nuance: ai.childExplanation || base.nuance,
+    nuanceVi: '',
+    usage: ai.usageSituations?.length ? ai.usageSituations.map((text) => ({ label: '•', text })) : base.usage,
+    similar: [],
+    examples: ai.practiceExample ? [ai.practiceExample] : base.examples,
+  } : base;
+  const aiSimilar = ai?.similarExpressions ?? [];
   const book = bookById(q.get('book') ?? undefined) ?? BOOKS.find((b) => b.wordIds.includes(w.id));
   const scene = sceneFor(w, book);
-  const extra = DETAIL[w.id] ?? {};
+  const extra: (typeof DETAIL)[string] = ai ? {} : DETAIL[w.id] ?? {};
+  const guide: GuideStep[] = ai ? [
+    ...(ai.parentTips?.length ? [{ title: '아이에게 이렇게 설명해요', items: ai.parentTips.map((text) => ({ text })) }] : []),
+    ...(ai.practiceExample ? [{ title: '상황이 생길 때 말해 줘요', items: [{ text: `“${ai.practiceExample}”`, boxed: true }] }] : []),
+  ] : guideFor(w);
   const sectionTitle = { margin: 0, fontSize: 14, fontWeight: 700, color: 'var(--primary)' } as const;
   const rows = [
     { text: w.text, feel: extra.feel ?? w.nuance.split('.')[0], vi: extra.feelVi, when: w.usage[0]?.label ?? '' },
@@ -40,16 +80,20 @@ export function WordDetailPage() {
         </div>
 
         <section className="card" style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
-          <h2 style={sectionTitle}>뜻</h2>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+            <h2 style={sectionTitle}>뜻</h2>
+            {ai && <span className="pill" style={{ background: 'var(--mint-soft)', color: 'var(--primary-dark)' }}>{Icon.check(12, '#155E53')}AI 설명</span>}
+            {aiLoading && <span style={{ fontSize: 12, color: 'var(--text-sub)' }}>AI 설명을 불러오는 중…</span>}
+          </div>
           <p style={{ margin: 0, fontSize: 19, fontWeight: 700, lineHeight: 1.5 }}>{w.meaning}</p>
-          <p style={{ margin: 0, fontSize: 14, color: 'var(--text-sub)' }}>{wordVi(w)}</p>
+          <p style={{ margin: 0, fontSize: 14, color: 'var(--text-sub)' }}>{ai ? w.vi : wordVi(w)}</p>
         </section>
 
         <section className="card" style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
           <h2 style={sectionTitle}>이럴 때 써요</h2>
           <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
             <p style={{ margin: 0, fontSize: 16, lineHeight: 1.55 }}>{w.nuance}</p>
-            <p style={{ margin: 0, fontSize: 14, color: 'var(--text-sub)' }}>{w.nuanceVi}</p>
+            {w.nuanceVi && <p style={{ margin: 0, fontSize: 14, color: 'var(--text-sub)' }}>{w.nuanceVi}</p>}
           </div>
           <div style={{ display: 'flex', flexDirection: 'column', gap: 8, borderTop: '1px solid #EEF0F4', paddingTop: 12 }}>
             {w.usage.map((u) => (
@@ -87,8 +131,20 @@ export function WordDetailPage() {
           </>
         )}
 
+        {aiSimilar.length > 0 && (
+          <>
+            <h2 style={{ margin: '10px 0 0', fontSize: 17, fontWeight: 700 }}>비슷한 표현</h2>
+            {aiSimilar.map((s) => (
+              <div key={s.text} className="card" style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+                <span style={exprFont}>{s.text}</span>
+                <p style={{ margin: 0, fontSize: 14, lineHeight: 1.6, color: 'var(--text-body)' }}>{s.nuance}</p>
+              </div>
+            ))}
+          </>
+        )}
+
         <h2 style={{ margin: '10px 0 0', fontSize: 17, fontWeight: 700 }}>아이에게는 이렇게</h2>
-        {guideFor(w).map((g, n) => (
+        {guide.map((g, n) => (
           <section key={g.title} className="card" style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
               <span style={{ width: 28, height: 28, borderRadius: '50%', background: 'var(--mint)', color: '#0F3D36', fontSize: 14, fontWeight: 800, display: 'flex', alignItems: 'center', justifyContent: 'center', flex: 'none' }}>{n + 1}</span>

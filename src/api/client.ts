@@ -72,7 +72,12 @@ function refreshTokens(): Promise<boolean> {
   return refreshing;
 }
 
-async function request<T>(path: string, init: RequestInit = {}, noRetry = false): Promise<T> {
+/** 로그인(게스트) 토큰이 있는지. 없으면 서버 기능 대신 예시 동작을 쓴다. */
+export const hasToken = () => !!store.get(TOKEN_KEY);
+/** 서버가 주는 /v1/... 상대 주소(음성 파일 등)를 전체 주소로 바꾼다. */
+export const absoluteUrl = (path: string) => (/^https?:/.test(path) ? path : new URL(path, new URL(BASE, location.href)).href);
+
+export async function request<T>(path: string, init: RequestInit = {}, noRetry = false): Promise<T> {
   const headers = new Headers(init.headers);
   // FormData는 브라우저가 boundary를 넣어야 하므로 Content-Type을 직접 넣지 않는다.
   if (init.body && !(init.body instanceof FormData)) headers.set('Content-Type', 'application/json');
