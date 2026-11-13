@@ -73,8 +73,9 @@ npm run build      # dist/ 생성
 비워 두면 모든 화면이 모의 응답으로 동작해서 백엔드 없이 시연할 수 있어요.
 
 ### 배포할 때 체크리스트
-- 배포 환경 변수 `VITE_API_BASE_URL=https://백엔드주소/v1` (끝에 `/v1` 필수). 빌드할 때 들어가므로 바꾸면 다시 빌드해야 해요.
+- 배포 빌드(`npm run build`)는 `.env.production`의 `VITE_API_BASE_URL=https://booktalk-be.onrender.com/v1`을 써요 (끝에 `/v1` 필수). 빌드할 때 들어가므로 바꾸면 다시 빌드해야 해요.
+- 개발(`npm run dev`)은 `.env`가 없으면 예시 데이터로 동작해요. 실제 서버로 개발하려면 `.env`에 같은 주소를 넣고 5173 포트로 띄우세요 (백엔드 CORS가 localhost:5173 을 허용).
 - 프론트가 https 면 백엔드도 https 여야 해요 (http 면 브라우저가 막아요).
 - 백엔드 `application.yml`의 `app.cors.allowed-origins`에 프론트 배포 주소를 넣어야 해요 (끝에 `/` 없이, 예: `https://xxx.netlify.app`).
 - `public/_redirects`(Netlify) 덕분에 `/books/scan` 같은 주소에서 새로고침해도 화면이 떠요.
-- 요청 제한 시간은 60초(무료 서버가 깨어나는 시간 고려), 기본 정보 입력은 서버가 느리면 8초 뒤 넘어가고 첫 촬영 때 등록을 마저 해요.
+- 앱을 열면 `/health`로 서버를 미리 깨워요. 요청 제한 시간은 120초(Render 무료 서버가 깨어나는 데 100초 넘게 걸리기도 함). AI가 깨어나는 중이라 분석이 실패하면 한 번 자동으로 다시 시도하고, 그래도 안 되면 '같은 사진으로 다시 시도' 버튼이 나와요, 기본 정보 입력은 서버가 느리면 8초 뒤 넘어가고 첫 촬영 때 등록을 마저 해요.

@@ -7,8 +7,18 @@ export const USE_MOCK = BASE === '';
 // 백엔드는 context-path 가 /v1 이라 주소 끝에 /v1 이 꼭 있어야 한다.
 if (!USE_MOCK && !BASE.endsWith('/v1')) console.warn(`[api] VITE_API_BASE_URL(${BASE}) 끝에 /v1 이 없어요. 예: https://서버주소/v1`);
 
-/** 일반 요청 제한 시간. 무료 서버가 잠에서 깨는 데 30~60초 걸릴 수 있어 넉넉히 둔다. */
-const TIMEOUT_MS = 60_000;
+/** 일반 요청 제한 시간. Render 무료 서버는 잠에서 깨는 데 100초 넘게 걸리기도 해서 넉넉히 둔다. */
+const TIMEOUT_MS = 120_000;
+
+/** 앱을 열자마자 서버를 깨워 둔다 (기본 정보 입력하는 동안 깨어나도록). 결과는 신경 쓰지 않는다. */
+export function warmUpServer() {
+  if (USE_MOCK) return;
+  fetch(`${BASE}/health`).catch(() => {});
+}
+
+/** AI 서버가 깨어나는 중이라 생기는 일시적인 분석 실패 */
+export const isTransientAiError = (e: unknown) =>
+  e instanceof ApiError && ['AI_TIMEOUT', 'AI_PROVIDER_UNAVAILABLE', 'TIMEOUT', 'NETWORK_ERROR', 'ANALYSIS_TIMEOUT'].includes(e.code);
 
 /** crypto.randomUUID 는 HTTPS(또는 localhost)에서만 있어서, 휴대폰으로 http://192.168… 접속할 때를 대비한다. */
 export function uuid(): string {

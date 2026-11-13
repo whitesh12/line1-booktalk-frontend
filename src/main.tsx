@@ -5,6 +5,9 @@ import './styles/fonts.css';
 import './styles/global.css';
 import './styles/motion.css';
 import App from './App';
+import { warmUpServer } from './api/client';
+
+warmUpServer();
 
 const router = createBrowserRouter([{ path: '*', element: <App /> }]);
 
