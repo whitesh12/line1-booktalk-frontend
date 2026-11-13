@@ -4,6 +4,7 @@ import { GoLink, useGo } from '../../lib/nav';
 import { Header, TabBar } from '../../components/ui';
 import { ApiError, USE_MOCK, analyzePhoto, isTransientAiError, setChildLanguage, withChild } from '../../api/client';
 import { peekPendingPhoto, saveScan, setPendingPhoto } from '../../data/scanned';
+import { PHOTO_TOO_LARGE } from '../../lib/photo';
 import type { Profile } from '../../store/profile';
 
 export function ScanAnalyzingPage({ profile, onSave }: { profile: Profile; onSave: (p: Profile) => void }) {
@@ -11,7 +12,7 @@ export function ScanAnalyzingPage({ profile, onSave }: { profile: Profile; onSav
   const hold = useSearchParams()[0].get('demo') === 'hold';
   const [photo] = useState(peekPendingPhoto);
   const live = !USE_MOCK && !!photo;
-  const [error, setError] = useState<{ message: string; retry: boolean } | null>(null);
+  const [error, setError] = useState<{ title?: string; message: string; retry: boolean } | null>(null);
   const [attempt, setAttempt] = useState(0); // '다시 시도'를 누르면 같은 사진으로 다시 분석
 
   // 모의 모드(또는 사진 없이 들어온 경우): 예시 책으로 넘어간다
@@ -43,9 +44,13 @@ export function ScanAnalyzingPage({ profile, onSave }: { profile: Profile; onSav
       })
       .catch((e) => {
         if (ctrl.signal.aborted) return;
+        // 사진 용량·형식 문제는 '분석 실패'가 아니라 사진 안내로 보여 준다
+        const photoProblem = e instanceof ApiError && (e.code === 'FILE_TOO_LARGE' || e.code === 'UNSUPPORTED_MEDIA_TYPE');
         setError({
-          message: e instanceof ApiError ? e.message : '표현을 찾는 중에 문제가 생겼어요. 다시 시도해 주세요.',
-          retry: isTransientAiError(e),
+          title: photoProblem ? '사진을 다시 확인해 주세요' : undefined,
+          message: e instanceof ApiError && e.code === 'FILE_TOO_LARGE' ? PHOTO_TOO_LARGE
+            : e instanceof ApiError ? e.message : '표현을 찾는 중에 문제가 생겼어요. 다시 시도해 주세요.',
+          retry: !photoProblem && isTransientAiError(e),
         });
       });
     return () => ctrl.abort();
@@ -58,7 +63,7 @@ export function ScanAnalyzingPage({ profile, onSave }: { profile: Profile; onSav
       <div className="screen">
         <Header title="표현 찾기" back={false} center />
         <div className="content center" style={{ gap: 18, padding: '0 24px 80px', textAlign: 'center' }} role="alert">
-          <b style={{ fontSize: 19 }}>표현을 찾지 못했어요</b>
+          <b style={{ fontSize: 19 }}>{error.title ?? '표현을 찾지 못했어요'}</b>
           <span style={{ fontSize: 15, color: 'var(--text-sub)', lineHeight: 1.55 }}>{error.message}</span>
           {error.retry && (
             <button className="btn btn-primary" style={{ marginTop: 8 }} onClick={() => { setError(null); setAttempt((n) => n + 1); }}>같은 사진으로 다시 시도</button>

@@ -111,7 +111,7 @@ a { color: var(--primary); }
 @keyframes dropdown-in { from { opacity: 0; transform: translateY(-4px) scale(.98); } to { opacity: 1; transform: none; } }
 .toggle[aria-pressed='true'] { border-color: var(--primary); background: var(--mint-soft); color: var(--primary); font-weight: 700; }
 
-.tabbar { flex: none; height: 72px; display: grid; grid-template-columns: repeat(3, 1fr); background: var(--surface); border-top: 1px solid var(--border); position: sticky; bottom: 0; }
+.tabbar { flex: none; height: calc(72px + env(safe-area-inset-bottom, 0px)); padding-bottom: env(safe-area-inset-bottom, 0px); box-sizing: border-box; display: grid; grid-template-columns: repeat(3, 1fr); background: var(--surface); border-top: 1px solid var(--border); position: sticky; bottom: 0; z-index: 5; } /* 아이폰 홈 바 영역만큼 띄운다 */
 .tabbar a { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 4px; font-size: 12px; font-weight: 500; color: var(--text-sub); text-decoration: none; }
 .tabbar a.active { color: var(--primary); font-weight: 700; }
 

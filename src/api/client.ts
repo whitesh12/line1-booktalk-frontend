@@ -1,6 +1,7 @@
 import type { Profile } from '../store/profile';
 import type { Word } from '../data/content';
 import type { ScanExpression } from '../data/scanned';
+import { MAX_UPLOAD_BYTES } from '../lib/photo';
 
 const BASE = ((import.meta.env.VITE_API_BASE_URL as string | undefined) ?? '').trim().replace(/\/+$/, '');
 export const USE_MOCK = BASE === '';
@@ -285,6 +286,8 @@ export interface PageAnalysis {
 /** 사진 업로드 → 분석 시작 → 상태 폴링 → 결과 조회 (명세서 8.2, 9장) */
 export async function analyzePhoto(file: File, childId: string, signal: AbortSignal,
   onProgress?: (percent: number) => void): Promise<PageAnalysis> {
+  // 업로드 전에 한 번 더 확인 (서버 제한보다 작은 4MB 기준)
+  if (file.size > MAX_UPLOAD_BYTES) throw new ApiError(413, 'FILE_TOO_LARGE', '사진 용량이 너무 커요.');
   const form = new FormData();
   form.append('file', file);
   form.append('childId', childId);
