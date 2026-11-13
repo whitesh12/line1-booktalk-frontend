@@ -16,9 +16,28 @@ export const SCAN_BOOK_ID = 'scan';
 const KEY = 'booktalk.scan';
 const TYPE: Record<string, WordType> = { MIMETIC: '의태어', ONOMATOPOEIA: '의성어', IDIOM: '관용 표현' };
 
-/** 화면 단어 id → 서버 표현 id(vocabularyId) */
+/** 사진으로 찾은 단어: 화면 단어 id → 서버 표현 id(vocabularyId) */
 let vocabIds: Record<string, string> = {};
-export const serverVocabId = (wordId: string): string | undefined => vocabIds[wordId];
+
+/** 시연용 동화책 단어: 화면 책 id → (화면 단어 id → 서버 표현 id). 같은 단어도 책마다 id 가 다르다. */
+const DEMO_KEY = 'booktalk.demoVocab';
+let demoIds: Record<string, Record<string, string>> = (() => {
+  try { return JSON.parse(localStorage.getItem(DEMO_KEY) ?? '{}'); } catch { return {}; }
+})();
+export function setDemoVocab(map: Record<string, Record<string, string>>) {
+  demoIds = map;
+  try { localStorage.setItem(DEMO_KEY, JSON.stringify(map)); } catch {}
+}
+
+/**
+ * 단어의 서버 표현 id. 단어 화면 주소의 ?book= 으로 어느 책의 단어인지 고른다.
+ * (사진으로 찍은 책이면 찍은 결과, 시연용 책이면 그 책의 단어, 책을 모르면 아무거나)
+ */
+export function serverVocabId(wordId: string, bookId = new URLSearchParams(location.search).get('book')): string | undefined {
+  if (bookId === SCAN_BOOK_ID) return vocabIds[wordId];
+  if (bookId && demoIds[bookId]?.[wordId]) return demoIds[bookId][wordId];
+  return vocabIds[wordId] ?? Object.values(demoIds).find((m) => m[wordId])?.[wordId];
+}
 
 /**
  * 촬영·분석 결과를 화면 데이터에 합친다.

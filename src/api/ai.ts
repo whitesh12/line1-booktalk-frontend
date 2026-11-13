@@ -3,6 +3,36 @@
  * 모두 '사진으로 찍어서 분석한 단어'(vocabularyId 가 있는 단어)에서만 쓸 수 있다.
  */
 import { ApiError, USE_MOCK, absoluteUrl, hasToken, request, uuid } from './client';
+import { BOOKS, WORDS } from '../data/content';
+import { setDemoVocab } from '../data/scanned';
+
+/* ───────────── 시연용 동화책 단어 연결 (GET /books?source=DEMO) ───────────── */
+
+let demoLoading: Promise<void> | null = null;
+/**
+ * 서버의 시연용 책(DEMO)과 화면의 예시 책을 '책 제목 + 단어 글자'로 맞춰 서버 표현 id 를 연결한다.
+ * 연결되면 예시 책 단어도 AI 설명·대화·문장 첨삭을 쓸 수 있다.
+ */
+export function loadDemoVocab(): Promise<void> {
+  if (USE_MOCK || !hasToken()) return Promise.resolve();
+  demoLoading ??= request<{ title: string; expressions?: { id: string; text: string }[] }[]>('/books?source=DEMO&limit=50')
+    .then((books) => {
+      const map: Record<string, Record<string, string>> = {};
+      for (const local of BOOKS) {
+        const remote = books.find((b) => b.title.trim() === local.title.trim());
+        if (!remote?.expressions) continue;
+        for (const wordId of local.wordIds) {
+          const text = WORDS[wordId]?.text;
+          const exp = text ? remote.expressions.find((e) => e.text.trim() === text) : undefined;
+          if (exp) (map[local.id] ??= {})[wordId] = exp.id;
+        }
+      }
+      setDemoVocab(map);
+    })
+    .catch((e) => { console.warn('[books] 시연용 책 단어를 불러오지 못했어요', e); })
+    .finally(() => { demoLoading = null; });
+  return demoLoading;
+}
 
 /* ───────────── 단어 설명 (GET /vocabulary/{id}) ───────────── */
 

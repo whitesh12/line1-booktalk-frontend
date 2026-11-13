@@ -2,6 +2,7 @@ import { useEffect } from 'react';
 import { Navigate, Route, Routes, useLocation } from 'react-router-dom';
 import { useProfile } from './store/profile';
 import { recordEntry } from './lib/nav';
+import { loadDemoVocab } from './api/ai';
 import { OnboardingPage } from './pages/onboarding/OnboardingPage';
 import { PrivacyNoticePage } from './pages/onboarding/PrivacyNoticePage';
 import { HomePage } from './pages/home/HomePage';
@@ -22,6 +23,8 @@ export default function App() {
   const [profile, setProfile] = useProfile();
   const loc = useLocation();
   useEffect(() => recordEntry(loc.pathname + loc.search), [loc]);
+  // 로그인(아이 등록)이 되면 시연용 동화책 단어를 서버 단어와 연결한다 → 예시 책에서도 AI 기능 사용
+  useEffect(() => { loadDemoVocab(); }, [profile.childId]);
   return (
     <div className="app">
       <Routes>
