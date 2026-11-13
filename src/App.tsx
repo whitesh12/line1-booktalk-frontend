@@ -40,7 +40,7 @@ export default function App() {
         <Route path="/scan/analyzing" element={<ScanAnalyzingPage profile={profile} onSave={setProfile} />} />
         <Route path="/words/:wordId" element={<WordDetailPage />} />
         <Route path="/words/:wordId/practice" element={<PracticeWritePage />} />
-        <Route path="/words/:wordId/practice/reviewing" element={<PracticeReviewingPage profile={profile} />} />
+        <Route path="/words/:wordId/practice/reviewing" element={<PracticeReviewingPage profile={profile} onSave={setProfile} />} />
         <Route path="/words/:wordId/practice/feedback" element={<PracticeFeedbackPage />} />
         <Route path="/words/:wordId/talk" element={<TalkIntroPage profile={profile} />} />
         <Route path="/words/:wordId/talk/chat" element={<TalkChatPage profile={profile} />} />

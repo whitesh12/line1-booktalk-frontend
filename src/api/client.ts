@@ -1,6 +1,6 @@
 import type { Profile } from '../store/profile';
 import type { Word } from '../data/content';
-import { serverVocabId, type ScanExpression } from '../data/scanned';
+import type { ScanExpression } from '../data/scanned';
 
 const BASE = ((import.meta.env.VITE_API_BASE_URL as string | undefined) ?? '').trim().replace(/\/+$/, '');
 export const USE_MOCK = BASE === '';
@@ -162,8 +162,6 @@ export interface SentenceFeedback {
   goodPoint?: string;
   explain?: string;
   tips: string[];
-  /** 서버 첨삭에 실패해서 예시 응답을 보여 주는 중 */
-  fallback?: boolean;
 }
 
 export function mockSentenceFeedback(word: Word, sentence: string): SentenceFeedback {
@@ -193,36 +191,43 @@ export function mockSentenceFeedback(word: Word, sentence: string): SentenceFeed
   return { kind: 'natural', original: s, tips: [] };
 }
 
+/** 백엔드가 AI 호출에 실패했을 때 대신 쓰는 단순 규칙 판정의 promptVersion */
+const RULE_FALLBACK = /^local-rule/;
+
 /**
- * 문장 첨삭. 서버는 사진 분석으로 만들어진 표현(vocabularyId)만 알기 때문에,
- * 촬영해서 분석한 단어일 때만 API를 부르고 내장 예시 단어는 모의 응답을 쓴다.
+ * 문장 첨삭 (POST /children/{childId}/sentence-practices).
+ * - 백엔드를 쓰지 않는 모드(VITE_API_BASE_URL 비움)에서만 예시 판정을 쓴다.
+ * - 서버를 쓰는 모드에서는 서버(AI) 판정만 쓴다. 요청이 실패하면 오류를 던져서 화면에서 '다시 시도'를 보여 준다.
+ *   (예전처럼 예시 판정으로 대신하면, 뜻이 틀린 문장도 '자연스러워요'로 통과되는 문제가 있었다)
  */
-export async function checkSentence(word: Word, sentence: string, childId?: string): Promise<SentenceFeedback> {
-  const vocabularyId = serverVocabId(word.id);
-  if (USE_MOCK || !childId || !vocabularyId) {
+export async function checkSentence(word: Word, sentence: string, childId?: string, vocabularyId?: string): Promise<SentenceFeedback> {
+  if (USE_MOCK) {
     await wait(1400);
     return mockSentenceFeedback(word, sentence);
   }
-  try {
-    const r = await request<{ assessment: string; meaningDelivered: boolean; targetWordUsed: boolean;
-      originalSentence: string; suggestedSentence: string; feedback: string; highlights: { text: string }[] }>(
-      `/children/${childId}/sentence-practices`,
-      // 문장 연습의 inputMethod 는 KEYBOARD | SPEECH (명세서의 TEXT 는 대화 메시지용)
-      { method: 'POST', body: JSON.stringify({ vocabularyId, sentence, inputMethod: 'KEYBOARD' }) },
-    );
-    const kind: FeedbackKind = !r.targetWordUsed ? 'missing' : !r.meaningDelivered ? 'meaning'
-      : r.suggestedSentence && r.suggestedSentence !== r.originalSentence ? 'polish' : 'natural';
-    // 서버 highlights 는 "두근두근을/를 해요" 같은 설명 문구라 문장 안에 그대로 없다.
-    // 문장에서 실제로 고칠 부분(예: "두근두근을")을 찾아 밑줄 칠 곳으로 쓴다.
-    const stem = word.text.split(' ')[0];
-    const found = r.originalSentence.match(new RegExp(`${stem}(을|를|이|가)`))?.[0];
-    const hl = r.highlights?.[0]?.text;
-    const wrongPart = found ?? (hl && r.originalSentence.includes(hl) ? hl : undefined);
-    return { kind, original: r.originalSentence, suggested: r.suggestedSentence, wrongPart, tips: [r.feedback] };
-  } catch (e) {
-    console.warn('[sentence-practices] 서버 첨삭 실패, 예시 응답으로 대신합니다', e);
-    return { ...mockSentenceFeedback(word, sentence), fallback: true };
+  if (!childId || !vocabularyId) {
+    throw new ApiError(422, 'WORD_NOT_ON_SERVER', '이 단어는 지금 AI 첨삭을 할 수 없어요. 잠시 후 다시 시도해 주세요.', true);
   }
+  const r = await request<{ assessment: string; meaningDelivered: boolean; targetWordUsed: boolean;
+    originalSentence: string; suggestedSentence: string; feedback: string; highlights: { text: string }[]; promptVersion?: string }>(
+    `/children/${childId}/sentence-practices`,
+    // 문장 연습의 inputMethod 는 KEYBOARD | SPEECH (명세서의 TEXT 는 대화 메시지용)
+    { method: 'POST', body: JSON.stringify({ vocabularyId, sentence, inputMethod: 'KEYBOARD' }) },
+  );
+  const kind: FeedbackKind = !r.targetWordUsed ? 'missing' : !r.meaningDelivered ? 'meaning'
+    : r.suggestedSentence && r.suggestedSentence !== r.originalSentence ? 'polish' : 'natural';
+  // AI 가 실패해서 백엔드가 단순 규칙으로 대신 판정했는데 '자연스러움'이 나온 경우는 믿을 수 없다 (뜻 혼동을 못 잡음).
+  if (kind === 'natural' && RULE_FALLBACK.test(r.promptVersion ?? '')) {
+    throw new ApiError(503, 'AI_UNAVAILABLE', 'AI가 문장을 확인하지 못했어요. 잠시 후 다시 시도해 주세요.', true);
+  }
+  // 밑줄 칠 곳: 뜻 혼동이면 목표 표현, 다듬기면 "두근두근을" 처럼 고칠 부분
+  // (서버 highlights 는 "두근두근을/를 해요" 같은 설명 문구라 문장 안에 그대로 없을 때가 많다)
+  const stem = word.text.split(' ')[0];
+  const found = r.originalSentence.match(new RegExp(`${stem}(을|를|이|가)`))?.[0];
+  const hl = r.highlights?.[0]?.text;
+  const wrongPart = kind === 'meaning' ? (r.originalSentence.includes(stem) ? stem : undefined)
+    : found ?? (hl && r.originalSentence.includes(hl) ? hl : undefined);
+  return { kind, original: r.originalSentence, suggested: r.suggestedSentence, wrongPart, tips: r.feedback ? [r.feedback] : [] };
 }
 
 /**

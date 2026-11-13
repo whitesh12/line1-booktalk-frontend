@@ -1,27 +1,63 @@
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { Navigate, useLocation, useNavigate } from 'react-router-dom';
 import { Header, TabBar } from '../../components/ui';
-import { checkSentence } from '../../api/client';
-import { trackLearning } from '../../api/ai';
+import { ApiError, USE_MOCK, checkSentence, withChild } from '../../api/client';
+import { loadDemoVocab, trackLearning } from '../../api/ai';
+import { serverVocabId } from '../../data/scanned';
 import type { Profile } from '../../store/profile';
-import { DEMO_SENTENCE, LOCAL_CSS, sparkPath, usePracticeWord } from './shared';
+import { DEMO_SENTENCE, LOCAL_CSS, setDraft, sparkPath, usePracticeWord } from './shared';
 
-export function PracticeReviewingPage({ profile }: { profile: Profile }) {
+export function PracticeReviewingPage({ profile, onSave }: { profile: Profile; onSave: (p: Profile) => void }) {
   const { w, qs, demo } = usePracticeWord();
   const nav = useNavigate();
   const hold = demo === 'waiting';
   const sentence = (useLocation().state as { sentence?: string } | null)?.sentence ?? (hold ? DEMO_SENTENCE.polish : undefined);
+  const [error, setError] = useState<string | null>(null);
+  const [attempt, setAttempt] = useState(0); // '다시 시도'를 누르면 같은 문장으로 다시 확인
+
   useEffect(() => {
     if (!sentence || hold) return;
     let alive = true;
-    checkSentence(w, sentence, profile.childId).then((fb) => {
-      if (!alive) return;
-      trackLearning(w.id, 'practiced'); // 문장 연습을 한 번 마쳤다
-      nav(`/words/${w.id}/practice/feedback${qs}`, { replace: true, state: { fb } });
-    });
+    // 서버를 쓰는 모드: 서버(AI) 판정만 쓴다. 단어의 서버 id 를 아직 모르면 시연용 책 단어를 다시 불러와 본다.
+    const run = USE_MOCK
+      ? checkSentence(w, sentence)
+      : withChild(profile, (childId) => { if (alive) onSave({ ...profile, childId }); }, async (childId) => {
+        let vocabularyId = serverVocabId(w.id);
+        if (!vocabularyId) { await loadDemoVocab(); vocabularyId = serverVocabId(w.id); }
+        return checkSentence(w, sentence, childId, vocabularyId);
+      });
+    run
+      .then((fb) => {
+        if (!alive) return;
+        trackLearning(w.id, 'practiced'); // 문장 연습을 한 번 마쳤다
+        nav(`/words/${w.id}/practice/feedback${qs}`, { replace: true, state: { fb } });
+      })
+      .catch((e) => {
+        if (!alive) return;
+        console.warn('[sentence-practices] 문장 첨삭 실패', e);
+        setError(e instanceof ApiError ? e.message : '문장을 확인하지 못했어요. 잠시 후 다시 시도해 주세요.');
+      });
     return () => { alive = false; };
-  }, [sentence, hold, w, qs, nav, profile.childId]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [sentence, hold, w, qs, nav, attempt]);
+
   if (!sentence) return <Navigate to={`/words/${w.id}/practice${qs}`} replace />;
+
+  // 실패하면 '통과'로 처리하지 않고 다시 시도하게 한다.
+  if (error) {
+    return (
+      <div className="screen">
+        <Header title="문장 연습" back={false} center />
+        <div className="content center" style={{ gap: 18, padding: '0 24px 80px', textAlign: 'center' }} role="alert">
+          <b style={{ fontSize: 19 }}>문장을 확인하지 못했어요</b>
+          <span style={{ fontSize: 15, color: 'var(--text-sub)', lineHeight: 1.55 }}>{error}</span>
+          <button className="btn btn-primary" style={{ marginTop: 8 }} onClick={() => { setError(null); setAttempt((n) => n + 1); }}>다시 시도</button>
+          <button className="btn btn-outline" onClick={() => { setDraft(w.id, sentence); nav(`/words/${w.id}/practice${qs}`, { replace: true }); }}>문장 고쳐 쓰기</button>
+        </div>
+        <TabBar />
+      </div>
+    );
+  }
   return (
     <div className="screen">
       <style>{LOCAL_CSS}</style>

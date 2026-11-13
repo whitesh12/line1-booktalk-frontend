@@ -11,12 +11,6 @@ export function PracticeFeedbackPage() {
     ?? (demo && DEMO_SENTENCE[demo] ? mockSentenceFeedback(w, DEMO_SENTENCE[demo]) : undefined);
   if (!fb) return <Navigate to={`/words/${w.id}/practice${qs}`} replace />;
 
-  // 서버 첨삭이 실패해 예시 피드백을 보여 줄 때는 그렇다고 알린다.
-  const fallbackNote = fb.fallback && (
-    <p role="status" style={{ margin: 0, padding: '10px 14px', borderRadius: 14, background: '#FFF6E5', color: '#8A5A00', fontSize: 13, lineHeight: 1.5 }}>
-      지금은 서버에 연결하지 못해서 예시 피드백을 보여 드려요.
-    </p>
-  );
 
   const mySentence = (cls?: string) => {
     if (!fb.wrongPart || !fb.original.includes(fb.wrongPart)) return fb.original;
@@ -29,7 +23,6 @@ export function PracticeFeedbackPage() {
       <div className="screen">
         <Header title="AI 피드백" to={`/words/${w.id}/practice${qs}`} />
         <div className="content" style={{ justifyContent: 'center', gap: 16, paddingBottom: 16 }}>
-          {fallbackNote}
           <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 12 }}>
             <span style={{ width: 76, height: 76, borderRadius: '50%', background: 'var(--mint)', display: 'grid', placeItems: 'center' }}>{Icon.check(38)}</span>
             <b style={{ fontSize: 22 }}>아주 자연스러웠어요!</b>
@@ -58,7 +51,6 @@ export function PracticeFeedbackPage() {
     <div className="screen">
       <Header title="AI 피드백" to={`/words/${w.id}/practice${qs}`} />
       <div className="content" style={{ gap: meaning ? 12 : 14, paddingBottom: 16 }}>
-        {fallbackNote}
         <div className={`banner${meaning ? ' coral' : ''}`}>
           <span className="dot">{meaning ? Icon.search() : Icon.check()}</span>
           <span>{meaning ? <>조금 헷갈렸어요.<br />‘{w.text}’의 뜻을 같이 살펴볼까요?</>
