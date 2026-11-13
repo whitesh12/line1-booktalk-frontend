@@ -4,7 +4,7 @@ import { Header, Icon, KidMessage, TabBar } from '../../components/ui';
 import type { Word } from '../../data/content';
 import { isIntentionalNav, useGo } from '../../lib/nav';
 import { ApiError, MAX_TURNS, USE_MOCK, childScript, hasToken, openingLine, sendToChild, talkFeedbackTips } from '../../api/client';
-import { finishTalk, sendTalk, startTalk, type TalkTurn } from '../../api/ai';
+import { finishTalk, sendTalk, startTalk, trackLearning, type TalkTurn } from '../../api/ai';
 import { serverVocabId } from '../../data/scanned';
 import type { Profile } from '../../store/profile';
 import { useTalk } from './shared';
@@ -59,6 +59,9 @@ export function TalkChatPage({ profile }: { profile: Profile }) {
   const stem = w.text.split(' ')[0];
 
   useEffect(() => { end.current?.scrollIntoView({ behavior: 'smooth' }); }, [msgs, waiting]);
+
+  // 학습 기록: 대화를 시작하면 '대화 연습 중', 끝까지 하면 '완료' (화면 미리보기 ?demo= 는 기록하지 않음)
+  useEffect(() => { if (!demo) trackLearning(w.id, done ? 'talked' : 'talking'); }, [demo, w.id, done]);
 
   // AI 대화 시작. 안 되면 연습용 대화로 진행한다.
   useEffect(() => {

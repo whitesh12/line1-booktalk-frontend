@@ -4,7 +4,26 @@
  */
 import { ApiError, USE_MOCK, absoluteUrl, hasToken, request, uuid } from './client';
 import { BOOKS, WORDS } from '../data/content';
-import { setDemoVocab } from '../data/scanned';
+import { serverVocabId, setDemoVocab } from '../data/scanned';
+import { loadProfile } from '../store/profile';
+import { recordLearning, type Stage } from '../store/learning';
+
+/* ───────────── 학습 기록 (이 기기 + POST /children/{id}/learning-events) ───────────── */
+
+const EVENT_TYPE: Partial<Record<Stage, string>> = { viewed: 'WORD_VIEWED', practiced: 'SENTENCE_COMPLETED', talked: 'DIALOGUE_COMPLETED' };
+
+/** 학습 기록을 남긴다. 홈 화면용으로 이 기기에 저장하고, 서버 단어면 서버에도 학습 이벤트를 보낸다. */
+export function trackLearning(wordId: string, stage: Stage, bookId = new URLSearchParams(location.search).get('book')) {
+  recordLearning(wordId, stage, bookId);
+  const type = EVENT_TYPE[stage];
+  const childId = loadProfile().childId;
+  const vocabularyId = serverVocabId(wordId, bookId);
+  if (!type || !childId || !vocabularyId || USE_MOCK || !hasToken()) return;
+  request(`/children/${childId}/learning-events`, {
+    method: 'POST',
+    body: JSON.stringify({ eventId: uuid(), type, vocabularyId, occurredAt: new Date().toISOString(), metadata: {} }),
+  }).catch((e) => console.warn('[learning-events] 학습 기록 전송 실패', e));
+}
 
 /* ───────────── 시연용 동화책 단어 연결 (GET /books?source=DEMO) ───────────── */
 

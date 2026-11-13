@@ -6,7 +6,7 @@ import { BOOKS, WORDS, bookById, sceneFor, type Word } from '../../data/content'
 import { DETAIL, guideFor, wordVi, type GuideStep } from '../../data/wordDetail';
 import { serverVocabId } from '../../data/scanned';
 import { USE_MOCK, hasToken } from '../../api/client';
-import { cachedVocabulary, fetchVocabulary, type VocabDetail } from '../../api/ai';
+import { cachedVocabulary, fetchVocabulary, trackLearning, type VocabDetail } from '../../api/ai';
 
 function Bold({ text, word }: { text: string; word: string }) {
   const stem = word.split(' ')[0];
@@ -55,6 +55,8 @@ export function WordDetailPage() {
   const aiSimilar = ai?.similarExpressions ?? [];
   const book = bookById(q.get('book') ?? undefined) ?? BOOKS.find((b) => b.wordIds.includes(w.id));
   const scene = sceneFor(w, book);
+  // 단어를 열어 본 것도 학습 기록으로 남긴다 (홈의 '최근 학습한 단어')
+  useEffect(() => { trackLearning(base.id, 'viewed', book?.id); }, [base.id, book?.id]);
   const extra: (typeof DETAIL)[string] = ai ? {} : DETAIL[w.id] ?? {};
   const guide: GuideStep[] = ai ? [
     ...(ai.parentTips?.length ? [{ title: '아이에게 이렇게 설명해요', items: ai.parentTips.map((text) => ({ text })) }] : []),

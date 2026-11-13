@@ -2,6 +2,7 @@ import { useEffect } from 'react';
 import { Navigate, useLocation, useNavigate } from 'react-router-dom';
 import { Header, TabBar } from '../../components/ui';
 import { checkSentence } from '../../api/client';
+import { trackLearning } from '../../api/ai';
 import type { Profile } from '../../store/profile';
 import { DEMO_SENTENCE, LOCAL_CSS, sparkPath, usePracticeWord } from './shared';
 
@@ -14,7 +15,9 @@ export function PracticeReviewingPage({ profile }: { profile: Profile }) {
     if (!sentence || hold) return;
     let alive = true;
     checkSentence(w, sentence, profile.childId).then((fb) => {
-      if (alive) nav(`/words/${w.id}/practice/feedback${qs}`, { replace: true, state: { fb } });
+      if (!alive) return;
+      trackLearning(w.id, 'practiced'); // 문장 연습을 한 번 마쳤다
+      nav(`/words/${w.id}/practice/feedback${qs}`, { replace: true, state: { fb } });
     });
     return () => { alive = false; };
   }, [sentence, hold, w, qs, nav, profile.childId]);

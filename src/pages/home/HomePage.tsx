@@ -2,6 +2,7 @@ import { GoLink } from '../../lib/nav';
 import { AnimWord, Icon, PageTitle, TabBar } from '../../components/ui';
 import { WORDS } from '../../data/content';
 import type { Profile } from '../../store/profile';
+import { timeAgo, useLearning, type LearnRecord, type Stage } from '../../store/learning';
 
 const Sparkle = ({ size, color, style }: { size: number; color: string; style: React.CSSProperties }) => (
   <svg width={size} height={size} viewBox="0 0 24 24" aria-hidden="true" style={{ position: 'absolute', ...style }}>
@@ -15,8 +16,20 @@ const Heart = ({ size, color, style }: { size: number; color: string; style: Rea
   </svg>
 );
 
+/** 마지막으로 한 단계에 따라 '이어서' 할 곳 */
+const NEXT: Record<Stage, { pill: string; path: (id: string) => string }> = {
+  viewed: { pill: '문장 연습할 차례', path: (id) => `/words/${id}/practice` },
+  practiced: { pill: '대화 연습할 차례', path: (id) => `/words/${id}/talk` },
+  talking: { pill: '대화 연습 중', path: (id) => `/words/${id}/talk` },
+  talked: { pill: '학습 완료', path: (id) => `/words/${id}` },
+};
+
 export function HomePage({ profile }: { profile: Profile }) {
-  const recent = ['dugeun', 'pongdang', 'eongeong', 'banjjak'].map((id) => WORDS[id]);
+  // 실제로 학습한 기록만 보여 준다 (지워진 단어·책은 건너뜀)
+  const records = useLearning().filter((r) => WORDS[r.wordId]);
+  const bookQs = (r: LearnRecord) => (r.bookId ? `?book=${r.bookId}` : '');
+  const last = records[0];
+  const recent = records.slice(0, 8);
   return (
     <div className="screen">
       <PageTitle title={`${profile.parentName} 님, 반가워요!`} sub="오늘 읽을 그림책으로 시작해 볼까요?" lineHeight={1.35} />
@@ -45,25 +58,42 @@ export function HomePage({ profile }: { profile: Profile }) {
         </GoLink>
 
         <h2 style={{ margin: '8px 0 0', fontSize: 16, fontWeight: 700 }}>이어서 학습하기</h2>
-        <GoLink to="/words/dugeun/practice?book=rabbit" className="card" style={{ display: 'flex', alignItems: 'center', gap: 14, padding: '16px 18px', textDecoration: 'none', color: 'inherit' }}>
-          <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: 4 }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-              <span style={{ fontWeight: 800, fontSize: 24, letterSpacing: '-0.02em' }}>두근두근</span>
-              <span className="pill" style={{ background: 'var(--mint-soft)', color: 'var(--primary-dark)' }}>대화 연습 중</span>
+        {last ? (
+          <GoLink to={NEXT[last.stage].path(last.wordId) + bookQs(last)} className="card" style={{ display: 'flex', alignItems: 'center', gap: 14, padding: '16px 18px', textDecoration: 'none', color: 'inherit' }}>
+            <div style={{ flex: 1, minWidth: 0, display: 'flex', flexDirection: 'column', gap: 4 }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
+                <span style={{ fontWeight: 800, fontSize: 24, letterSpacing: '-0.02em' }}>{WORDS[last.wordId].text}</span>
+                <span className="pill" style={{ background: 'var(--mint-soft)', color: 'var(--primary-dark)' }}>{NEXT[last.stage].pill}</span>
+              </div>
+              <span style={{ fontSize: 13, color: 'var(--text-sub)' }}>마지막 학습 · {timeAgo(last.at)}</span>
             </div>
-            <span style={{ fontSize: 13, color: 'var(--text-sub)' }}>마지막 학습 · 어제</span>
-          </div>
-          <span style={{ color: 'var(--text-sub)' }}>{Icon.chevron()}</span>
-        </GoLink>
+            <span style={{ color: 'var(--text-sub)' }}>{Icon.chevron()}</span>
+          </GoLink>
+        ) : (
+          <GoLink to="/books" className="card" style={{ display: 'flex', alignItems: 'center', gap: 14, padding: '16px 18px', textDecoration: 'none', color: 'inherit' }}>
+            <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: 4 }}>
+              <b style={{ fontSize: 16 }}>아직 학습한 단어가 없어요</b>
+              <span style={{ fontSize: 13, color: 'var(--text-sub)' }}>동화책을 골라 첫 단어를 배워 볼까요?</span>
+            </div>
+            <span style={{ color: 'var(--text-sub)' }}>{Icon.chevron()}</span>
+          </GoLink>
+        )}
 
-        <h2 style={{ margin: '8px 0 0', fontSize: 16, fontWeight: 700 }}>최근 학습한 단어</h2>
-        <div className="card" style={{ display: 'flex', flexWrap: 'wrap', gap: 8, padding: 16 }}>
-          {recent.map((w) => (
-            <GoLink key={w.id} to={`/words/${w.id}?book=rabbit`} style={{ background: 'var(--bg)', borderRadius: 999, padding: '6px 14px', fontWeight: 800, fontSize: 19, letterSpacing: '-0.02em', color: 'var(--text)', textDecoration: 'none' }}>
-              <AnimWord text={w.text} motion={w.motion} />
-            </GoLink>
-          ))}
-        </div>
+        {recent.length > 0 && (
+          <>
+            <h2 style={{ margin: '8px 0 0', fontSize: 16, fontWeight: 700 }}>최근 학습한 단어</h2>
+            <div className="card" style={{ display: 'flex', flexWrap: 'wrap', gap: 8, padding: 16 }}>
+              {recent.map((r) => {
+                const w = WORDS[r.wordId];
+                return (
+                  <GoLink key={r.wordId} to={`/words/${r.wordId}${bookQs(r)}`} style={{ background: 'var(--bg)', borderRadius: 999, padding: '6px 14px', fontWeight: 800, fontSize: 19, letterSpacing: '-0.02em', color: 'var(--text)', textDecoration: 'none' }}>
+                    <AnimWord text={w.text} motion={w.motion} />
+                  </GoLink>
+                );
+              })}
+            </div>
+          </>
+        )}
       </div>
       <TabBar />
     </div>
