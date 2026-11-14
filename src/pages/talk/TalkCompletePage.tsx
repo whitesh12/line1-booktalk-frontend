@@ -1,5 +1,5 @@
 import { GoLink } from '../../lib/nav';
-import { Header, TabBar } from '../../components/ui';
+import { Header, TabBar, callName } from '../../components/ui';
 import type { Profile } from '../../store/profile';
 import { useTalk } from './shared';
 
@@ -14,7 +14,7 @@ export function TalkCompletePage({ profile }: { profile: Profile }) {
         </div>
         <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
           <b style={{ fontSize: 26 }}>잘했어요!</b>
-          <span style={{ fontSize: 16, lineHeight: 1.6, color: 'var(--text-body)' }}>오늘 배운 표현으로<br />{profile.childName}이와 끝까지 이야기했어요</span>
+          <span style={{ fontSize: 16, lineHeight: 1.6, color: 'var(--text-body)' }}>오늘 배운 표현으로<br />{callName(profile.childName)}와 끝까지 이야기했어요</span>
         </div>
       </div>
       <div className="bottom-bar"><GoLink to={`/books/${book.id}`} className="btn btn-primary">목록으로</GoLink></div>

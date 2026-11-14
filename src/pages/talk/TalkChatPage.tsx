@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import { useBlocker, useSearchParams } from 'react-router-dom';
-import { Header, Icon, KidMessage, TabBar } from '../../components/ui';
+import { Header, Icon, KidMessage, TabBar, callName, josa } from '../../components/ui';
 import { formatElapsed, useVoiceInput } from '../../lib/useVoiceInput';
 import { LevelBars } from '../../components/ui';
 import type { Word } from '../../data/content';
@@ -16,7 +16,7 @@ type Msg =
   | { from: 'kid'; text: string }
   | { from: 'me'; text: string }
   | { from: 'praise'; text: string } // AI 가 잘했다고 한 말 (내 말풍선 아래 작게)
-  | { from: 'feedback'; tips: string[]; title?: string };
+  | { from: 'feedback'; tips: string[]; title?: string; retry?: boolean }; // retry: AI 가 답을 받아들이지 않음 (칭찬 아이콘 대신 안내)
 type Seed = { msgs: Msg[]; turn: number; waiting: boolean };
 
 function demoSeed(demo: string | null, w: Word, name: string): Seed {
@@ -31,8 +31,8 @@ function demoSeed(demo: string | null, w: Word, name: string): Seed {
     case 'done': return {
       msgs: [...first,
         me('좋아하는 걸 보면 마음이 자꾸 뛰는 거야. 토끼도 당근을 보고 그랬을 거야.'), kid(childScript(1, w)),
-        me(`맞아! 그때 ${name}이 마음도 ${w.text}했겠다.`), kid(childScript(2, w)),
-        me(`토끼가 당근 보고 ${w.text}한 것처럼, ${name}이도 소풍 생각하면 ${w.text}하지?`)],
+        me(`맞아! 그때 ${callName(name)} 마음도 ${w.text}했겠다.`), kid(childScript(2, w)),
+        me(`토끼가 당근 보고 ${w.text}한 것처럼, ${callName(name)}도 소풍 생각하면 ${w.text}하지?`)],
       turn: MAX_TURNS, waiting: false,
     };
     default: return { msgs: [kid(openingLine(w))], turn: 0, waiting: false };
@@ -141,7 +141,7 @@ export function TalkChatPage({ profile, onSave }: { profile: Profile; onSave: (p
     setAiHint(null);
     if (r.userMessage.accepted === false) {
       const tips = [r.aiMessage.feedback, r.aiMessage.hint].filter((x): x is string => !!x);
-      setMsgs((m) => [...m, { from: 'feedback', title: '표현을 한 번만 다듬어 볼까요?', tips: tips.length ? tips : talkFeedbackTips(w) }]);
+      setMsgs((m) => [...m, { from: 'feedback', title: `‘${w.text}’${josa(w.text, '을', '를')} 넣어서 다시 답해 볼까요?`, retry: true, tips: tips.length ? tips : talkFeedbackTips(w) }]);
       return;
     }
     const praise: Msg[] = r.aiMessage.feedback ? [{ from: 'praise', text: r.aiMessage.feedback }] : [];
@@ -201,7 +201,7 @@ export function TalkChatPage({ profile, onSave }: { profile: Profile; onSave: (p
         <div role="dialog" aria-modal="true" aria-labelledby="quit-title" style={{ position: 'fixed', inset: 0, zIndex: 10, background: 'rgba(29, 36, 51, .45)', display: 'grid', placeItems: 'center', padding: 24 }}>
           <div style={{ width: '100%', maxWidth: 340, background: '#fff', borderRadius: 20, padding: '24px 20px 20px', display: 'flex', flexDirection: 'column', gap: 8, textAlign: 'center' }}>
             <b id="quit-title" style={{ fontSize: 18 }}>대화를 그만할까요?</b>
-            <span style={{ fontSize: 14, lineHeight: 1.5, color: 'var(--text-sub)' }}>지금까지 나눈 대화는 저장되지 않아요.</span>
+            <span style={{ fontSize: 14, lineHeight: 1.5, color: 'var(--text-sub)' }}>그만두면 이 대화는 여기서 끝나요. 다음에 처음부터 다시 할 수 있어요.</span>
             <div style={{ display: 'flex', gap: 10, marginTop: 12 }}>
               <button type="button" className="btn btn-outline" style={{ height: 48, fontSize: 16 }} onClick={stay} autoFocus>계속하기</button>
               <button type="button" className="btn btn-primary" style={{ height: 48, fontSize: 16 }} onClick={leave}>그만하기</button>
@@ -225,7 +225,7 @@ export function TalkChatPage({ profile, onSave }: { profile: Profile; onSave: (p
             <p key={i} style={{ margin: '-4px 0 0', alignSelf: 'flex-end', maxWidth: '85%', fontSize: 13, lineHeight: 1.5, color: 'var(--primary)', textAlign: 'right' }}>{Icon.check(12, '#1C7A6C')} {m.text}</p>
           ) : (
             <div key={i} style={{ display: 'flex', flexDirection: 'column', gap: 12, marginTop: 6 }}>
-              <div className="banner" style={{ gap: 10, borderRadius: 16, padding: '12px 14px', fontSize: 14 }}><span className="dot" style={{ width: 30, height: 30 }}>{Icon.check(16)}</span>{m.title ?? '의미는 잘 전달됐어요! 표현 하나만 다듬어 볼까요?'}</div>
+              <div className="banner" style={{ gap: 10, borderRadius: 16, padding: '12px 14px', fontSize: 14 }}><span className="dot" style={{ width: 30, height: 30, ...(m.retry ? { background: 'var(--coral)' } : {}) }}>{m.retry ? Icon.bulb(16) : Icon.check(16)}</span>{m.title ?? '의미는 잘 전달됐어요! 표현 하나만 다듬어 볼까요?'}</div>
               <div className="hint" style={{ borderRadius: 18, padding: '14px 16px' }}><b style={{ fontSize: 15 }}>이 부분만 살짝</b>{m.tips.map((t) => <p key={t} style={{ fontSize: 14, lineHeight: 1.55 }}>{t}</p>)}</div>
             </div>
           ),

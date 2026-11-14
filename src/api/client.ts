@@ -219,8 +219,11 @@ export async function checkSentence(word: Word, sentence: string, childId?: stri
     // 문장 연습의 inputMethod 는 KEYBOARD | SPEECH (명세서의 TEXT 는 대화 메시지용)
     { method: 'POST', body: JSON.stringify({ vocabularyId, sentence, inputMethod }) },
   );
-  const kind: FeedbackKind = !r.targetWordUsed ? 'missing' : !r.meaningDelivered ? 'meaning'
-    : r.suggestedSentence && r.suggestedSentence !== r.originalSentence ? 'polish' : 'natural';
+  // 서버 판정(assessment)을 먼저 따르고, 모르는 값이면 다른 필드로 판단한다
+  const BY_ASSESSMENT: Record<string, FeedbackKind> = { GOOD: 'natural', NEEDS_REVISION: 'polish', MEANING_MISMATCH: 'meaning', TARGET_NOT_USED: 'missing' };
+  const kind: FeedbackKind = BY_ASSESSMENT[r.assessment]
+    ?? (!r.targetWordUsed ? 'missing' : !r.meaningDelivered ? 'meaning'
+      : r.suggestedSentence && r.suggestedSentence !== r.originalSentence ? 'polish' : 'natural');
   // AI 가 실패해서 백엔드가 단순 규칙으로 대신 판정했는데 '자연스러움'이 나온 경우는 믿을 수 없다 (뜻 혼동을 못 잡음).
   if (kind === 'natural' && RULE_FALLBACK.test(r.promptVersion ?? '')) {
     throw new ApiError(503, 'AI_UNAVAILABLE', 'AI가 문장을 확인하지 못했어요. 잠시 후 다시 시도해 주세요.', true);

@@ -82,7 +82,7 @@ export function PracticeFeedbackPage() {
             {meaningTr(w) && <p style={{ margin: 0, fontSize: 13, color: 'var(--text-sub)' }}>{meaningTr(w)}</p>}
           </div>
         )}
-        {fb.suggested && fb.kind === 'polish' && (
+        {fb.suggested && fb.suggested.trim() !== fb.original.trim() && fb.kind === 'polish' && (
           <div className="card selected" style={cardPad}><p className="card-label teal">이렇게 말해 보세요</p><p style={{ margin: 0, fontSize: 18, lineHeight: 1.7 }}><Highlight sentence={fb.suggested} word={w.text} /></p></div>
         )}
         <div className="hint" style={{ gap: 8 }}>

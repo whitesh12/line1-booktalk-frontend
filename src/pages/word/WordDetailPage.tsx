@@ -5,7 +5,7 @@ import { AnimWord, Header, Highlight, Icon, speak, TabBar, useSpeechLoading } fr
 import { BOOKS, WORDS, bookById, sceneFor, type Word } from '../../data/content';
 import { DETAIL, guideFor, type GuideStep } from '../../data/wordDetail';
 import { currentLang, detailRowTr, langOf, meaningTr, nuanceTr } from '../../data/translations';
-import { serverVocabId, useVocabVersion } from '../../data/scanned';
+import { isScanBook, serverVocabId, useVocabVersion } from '../../data/scanned';
 import { USE_MOCK, hasToken } from '../../api/client';
 import { cachedVocabulary, fetchVocabulary, trackLearning, type VocabDetail } from '../../api/ai';
 
@@ -63,7 +63,11 @@ export function WordDetailPage() {
   const aiSimilar = ai?.similarExpressions ?? [];
   const book = bookById(q.get('book') ?? undefined) ?? BOOKS.find((b) => b.wordIds.includes(w.id));
   // 그림책 속 문장: 서버 예문이 있으면 그것을 쓴다 (서버가 읽어 주기 음성을 미리 만들어 두는 문장)
-  const scene = ai?.sourceSentence?.ko || sceneFor(w, book);
+  // 그림책 속 문장: 찍은 책은 사진 속 문장, 시연용 책은 넣어 둔 실제 책 문장이 있으면 그것.
+  // 없으면 서버 예문(서버가 읽어 주기 음성을 미리 만들어 두는 문장)을 '예문'으로 보여 준다.
+  const bookScene = book && !isScanBook(book.id) ? book.scenes[w.id] : undefined;
+  const scene = bookScene || ai?.sourceSentence?.ko || sceneFor(w, book);
+  const fromBook = !!book && (isScanBook(book.id) || !!bookScene);
   const wordLoading = useSpeechLoading(w.text);
   const sceneLoading = useSpeechLoading(scene);
   // 단어를 열어 본 것도 학습 기록으로 남긴다 (홈의 '최근 학습한 단어')
@@ -119,7 +123,7 @@ export function WordDetailPage() {
 
         <section className="card" style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-            <h2 style={sectionTitle}>{book ? '그림책 속 문장' : '예문'}</h2>
+            <h2 style={sectionTitle}>{fromBook ? '그림책 속 문장' : '예문'}</h2>
             <button type="button" aria-label={sceneLoading ? '문장 음성 불러오는 중' : '문장 읽어주기'} aria-busy={sceneLoading} className={sceneLoading ? 'tts-loading' : undefined} onClick={() => speak(scene)} style={{ width: 44, height: 44, borderRadius: '50%', border: 0, background: 'var(--primary)', color: '#fff', display: 'grid', placeItems: 'center', cursor: 'pointer' }}>{Icon.play()}</button>
           </div>
           <p style={{ margin: 0, fontSize: 18, lineHeight: 1.7 }}><Highlight sentence={scene} word={w.text} /></p>

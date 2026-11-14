@@ -89,7 +89,7 @@ export function AnimWord({ text, motion, mode = 'hover' }: { text: string; motio
   );
 }
 
-const TAG_CLASS: Record<WordType, string> = { 의태어: 'tag-mimetic', 의성어: 'tag-sound', '관용 표현': 'tag-idiom', 감탄사: 'tag-interjection' };
+const TAG_CLASS: Record<WordType, string> = { 의태어: 'tag-mimetic', 의성어: 'tag-sound', '관용 표현': 'tag-idiom', 감탄사: 'tag-interjection', '감정 표현': 'tag-interjection' };
 export function TypeTag({ type, style }: { type: WordType; style?: React.CSSProperties }) {
   return <span className={`tag ${TAG_CLASS[type]}`} style={style}>{type}</span>;
 }
@@ -216,4 +216,10 @@ export const ro = (word: string) => {
   if (c < 0xac00 || c > 0xd7a3) return '(으)로';
   const b = (c - 0xac00) % 28;
   return b === 0 || b === 8 ? '로' : '으로';
+};
+
+/** 아이 이름을 부를 때: 받침이 있으면 '이'를 붙인다 (민준 → 민준이와, 지아 → 지아와) */
+export const callName = (name: string) => {
+  const c = name.charCodeAt(name.length - 1);
+  return c >= 0xac00 && c <= 0xd7a3 && (c - 0xac00) % 28 ? `${name}이` : name;
 };

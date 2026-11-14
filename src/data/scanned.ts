@@ -27,7 +27,7 @@ export const isScanBook = (id?: string | null) => !!id && (id === 'scan' || id.s
 const LIST_KEY = 'booktalk.scans';
 const OLD_KEY = 'booktalk.scan'; // 예전에는 마지막 1권만 저장했다
 const MAX_BOOKS = 30;
-const TYPE: Record<string, WordType> = { MIMETIC: '의태어', ONOMATOPOEIA: '의성어', IDIOM: '관용 표현' };
+const TYPE: Record<string, WordType> = { MIMETIC: '의태어', ONOMATOPOEIA: '의성어', IDIOM: '관용 표현', EMOTION: '감정 표현', INTERJECTION: '감탄사' };
 
 /* ───────── 단어 ↔ 서버 표현 id ───────── */
 

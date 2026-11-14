@@ -1,4 +1,4 @@
-export type WordType = '의태어' | '의성어' | '관용 표현' | '감탄사';
+export type WordType = '의태어' | '의성어' | '관용 표현' | '감탄사' | '감정 표현';
 export type Motion =
   | 'beat' | 'drop' | 'sob' | 'twinkle' | 'hop' | 'tiptoe' | 'roll'
   | 'splash' | 'crawl' | 'nod' | 'wave' | 'gulp' | 'struggle' | 'heave' | 'widen' | null;

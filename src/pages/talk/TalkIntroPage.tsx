@@ -1,5 +1,5 @@
 import { GoLink } from '../../lib/nav';
-import { Header, Icon, TabBar } from '../../components/ui';
+import { Header, Icon, TabBar, callName } from '../../components/ui';
 import type { Profile } from '../../store/profile';
 import { useTalk } from './shared';
 
@@ -13,7 +13,7 @@ export function TalkIntroPage({ profile }: { profile: Profile }) {
           <span className="avatar" style={{ width: 84, height: 84, fontSize: 34 }} aria-hidden="true">{profile.childName.slice(0, 1)}</span>
           <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
             <span className="pill" style={{ alignSelf: 'flex-start', background: 'var(--mint-soft)', color: 'var(--primary-dark)' }}>대화 파트너</span>
-            <b style={{ fontSize: 19 }}>{profile.childName}이와 이야기해요</b>
+            <b style={{ fontSize: 19 }}>{callName(profile.childName)}와 이야기해요</b>
             <span style={{ fontSize: 14, color: 'var(--text-sub)' }}>{profile.childAge}세 · {book.title}</span>
           </div>
         </div>
