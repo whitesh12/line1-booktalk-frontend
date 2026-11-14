@@ -32,6 +32,9 @@ export function uuid(): string {
   return `${h.slice(0, 8)}-${h.slice(8, 12)}-${h.slice(12, 16)}-${h.slice(16, 20)}-${h.slice(20)}`;
 }
 
+/** 단어를 정규식에 그대로 넣으면 '어?'·'(…)' 같은 글자 때문에 오류가 나서 이스케이프한다 */
+export const escapeRe = (s: string) => s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+
 const TOKEN_KEY = 'booktalk.token';
 const REFRESH_KEY = 'booktalk.refresh';
 const DEVICE_KEY = 'booktalk.device';
@@ -70,7 +73,12 @@ function refreshTokens(): Promise<boolean> {
   }, true)
     .then((t) => { saveTokens(t); return true; })
     // 서버가 갱신을 거부했을 때만 토큰을 지운다. 통신이 잠깐 끊긴 것(NETWORK_ERROR·TIMEOUT)으로 로그아웃시키지 않는다.
-    .catch((e) => { if (e instanceof ApiError && e.status >= 400 && e.status < 500 && e.status !== 408) clearTokens(); return false; })
+    .catch((e) => {
+      // 다른 창(탭)이 먼저 갱신해서 새 토큰을 저장했으면, 내 갱신이 거부돼도 그 토큰을 쓴다 (지우면 두 창 다 로그아웃됨)
+      if (store.get(REFRESH_KEY) !== refreshToken) return !!store.get(TOKEN_KEY);
+      if (e instanceof ApiError && e.status >= 400 && e.status < 500 && e.status !== 408) clearTokens();
+      return false;
+    })
     .finally(() => { refreshing = null; });
   return refreshing;
 }
@@ -110,8 +118,12 @@ export async function request<T>(path: string, init: RequestInit = {}, noRetry =
     outer?.removeEventListener('abort', onOuterAbort);
   }
 
-  // 401: 토큰 갱신 후 1회만 재시도
-  if (res.status === 401 && !noRetry && (await refreshTokens())) return request<T>(path, init, true);
+  // 401: 토큰 갱신 후 1회만 재시도. 그사이 다른 창이 이미 토큰을 바꿨으면 갱신 없이 새 토큰으로 다시 보낸다.
+  if (res.status === 401 && !noRetry) {
+    const now = store.get(TOKEN_KEY);
+    if (now && now !== token) return request<T>(path, init, true);
+    if (await refreshTokens()) return request<T>(path, init, true);
+  }
 
   if (!res.ok || body?.error) {
     const e = body?.error;
@@ -133,7 +145,13 @@ const LANGUAGE = { vi: 'vi', zh: 'zh-CN', en: 'en' } as const;
  * 같은 기기(deviceId)는 같은 계정으로 로그인되고 계정당 아이는 최대 5명이라,
  * 이미 등록된 아이가 있으면 새로 만들지 않고 그 아이 정보를 고쳐서 쓴다.
  */
-export async function registerProfile(p: Profile): Promise<string | undefined> {
+let registering: Promise<string | undefined> | null = null;
+export function registerProfile(p: Profile): Promise<string | undefined> {
+  // 온보딩에서 늦어진 등록과 첫 촬영의 등록이 겹치면 아이가 두 명 만들어질 수 있어서, 진행 중인 등록을 같이 기다린다
+  registering ??= doRegister(p).finally(() => { registering = null; });
+  return registering;
+}
+async function doRegister(p: Profile): Promise<string | undefined> {
   if (USE_MOCK) return undefined;
   let deviceId = store.get(DEVICE_KEY);
   if (!deviceId) { deviceId = uuid(); store.set(DEVICE_KEY, deviceId); }
@@ -173,7 +191,7 @@ export function mockSentenceFeedback(word: Word, sentence: string): SentenceFeed
   const s = sentence.trim();
   const stem = word.text.split(' ')[0];
   if (!s.includes(stem)) {
-    return { kind: 'missing', original: s, tips: [`문장에 ‘${word.text}’이 아직 없어요.`, '어디에 넣으면 좋을지 한 번 더 써 볼까요?'] };
+    return { kind: 'missing', original: s, tips: [`문장에 ‘${word.text}’${josa(word.text, '이', '가')} 아직 없어요.`, '어디에 넣으면 좋을지 한 번 더 써 볼까요?'] };
   }
   if (word.id === 'dugeun' && /울|눈물/.test(s)) {
     return {
@@ -184,13 +202,13 @@ export function mockSentenceFeedback(word: Word, sentence: string): SentenceFeed
         '아니면 ‘두근두근’이 어울리는 순간으로 다시 써 봐도 좋아요. 선물을 열기 전처럼요.'],
     };
   }
-  const wrong = new RegExp(`${stem}(을|를|이|가)\\s*(해|하)`);
+  const wrong = new RegExp(`${escapeRe(stem)}(을|를|이|가)\\s*(해|하)`);
   const m = s.match(wrong);
   if (m) {
     return {
       kind: 'polish', original: s, wrongPart: m[0].replace(/\s*(해|하)$/, ''),
       suggested: s.replace(wrong, `${stem}$2`),
-      tips: [`뜻은 정확해요! ‘${word.text}’을 상황에 맞게 잘 골랐어요.`, `‘${stem}해요’라고 이어서 말하면 더 자연스러워요.`],
+      tips: [`뜻은 정확해요! ‘${word.text}’${josa(word.text, '을', '를')} 상황에 맞게 잘 골랐어요.`, `‘${stem}해요’라고 이어서 말하면 더 자연스러워요.`],
     };
   }
   return { kind: 'natural', original: s, tips: [] };
@@ -231,11 +249,12 @@ export async function checkSentence(word: Word, sentence: string, childId?: stri
   // 밑줄 칠 곳: 뜻 혼동이면 목표 표현, 다듬기면 "두근두근을" 처럼 고칠 부분
   // (서버 highlights 는 "두근두근을/를 해요" 같은 설명 문구라 문장 안에 그대로 없을 때가 많다)
   const stem = word.text.split(' ')[0];
-  const found = r.originalSentence.match(new RegExp(`${stem}(을|를|이|가)`))?.[0];
+  const original = r.originalSentence ?? sentence; // 서버가 원문을 빠뜨려도 멈추지 않게
+  const found = original.match(new RegExp(`${escapeRe(stem)}(을|를|이|가)`))?.[0];
   const hl = r.highlights?.[0]?.text;
-  const wrongPart = kind === 'meaning' ? (r.originalSentence.includes(stem) ? stem : undefined)
-    : found ?? (hl && r.originalSentence.includes(hl) ? hl : undefined);
-  return { kind, original: r.originalSentence, suggested: r.suggestedSentence, wrongPart, tips: r.feedback ? [r.feedback] : [] };
+  const wrongPart = kind === 'meaning' ? (original.includes(stem) ? stem : undefined)
+    : found ?? (hl && original.includes(hl) ? hl : undefined);
+  return { kind, original, suggested: r.suggestedSentence ?? undefined, wrongPart, tips: r.feedback ? [r.feedback] : [] };
 }
 
 /**
@@ -291,9 +310,10 @@ export interface PageAnalysis {
   expressions: ScanExpression[];
 }
 
-/** 사진 업로드 → 분석 시작 → 상태 폴링 → 결과 조회 (명세서 8.2, 9장) */
-export async function analyzePhoto(file: File, childId: string, signal: AbortSignal,
-  onProgress?: (percent: number) => void): Promise<PageAnalysis> {
+export interface UploadedPage { pageId: string; bookId: string; pageLabel: string | null; childId: string }
+
+/** 사진 업로드 (명세서 8.2). 같은 사진으로 다시 시도할 때는 이 결과를 다시 써서 또 올리지 않는다. */
+export async function uploadPhoto(file: File, childId: string, signal: AbortSignal): Promise<UploadedPage> {
   // 업로드 전에 한 번 더 확인 (서버 제한보다 작은 4MB 기준)
   if (file.size > MAX_UPLOAD_BYTES) throw new ApiError(413, 'FILE_TOO_LARGE', '사진 용량이 너무 커요.');
   const form = new FormData();
@@ -302,10 +322,25 @@ export async function analyzePhoto(file: File, childId: string, signal: AbortSig
   form.append('bookTitle', '내가 찍은 그림책');
   const page = await request<{ pageId: string; bookId: string; pageLabel: string | null }>(
     '/books/uploads', { method: 'POST', body: form, signal });
+  return { ...page, childId };
+}
 
-  const job = await request<{ jobId: string; status: string; pollAfterMs: number }>(
+type JobState = { status: string; progress?: number; pollAfterMs?: number; errorCode?: string; errorMessage?: string };
+/** 끝난 상태는 COMPLETED 말고도 FAILED, REJECTED, CANCELLED 가 있다 */
+function throwIfFailed(j: JobState) {
+  if (j.status !== 'QUEUED' && j.status !== 'RUNNING' && j.status !== 'COMPLETED') {
+    throw new ApiError(422, j.errorCode ?? 'ANALYSIS_FAILED', j.errorMessage ?? '글자를 읽지 못했어요. 다시 찍어 주세요.');
+  }
+}
+
+/** 올린 페이지 분석 시작 → 상태 폴링 → 결과 조회 (명세서 9장). force 는 같은 페이지를 다시 분석할 때 */
+export async function analyzePage(page: UploadedPage, signal: AbortSignal, force = false,
+  onProgress?: (percent: number) => void): Promise<PageAnalysis> {
+  const { childId } = page;
+  const job = await request<JobState & { jobId: string }>(
     `/books/pages/${page.pageId}/analysis-jobs`,
-    { method: 'POST', body: JSON.stringify({ childId, force: false, features: ['OCR', 'EXPRESSIONS'] }), signal });
+    { method: 'POST', body: JSON.stringify({ childId, force, features: ['OCR', 'EXPRESSIONS'] }), signal });
+  throwIfFailed(job); // 시작하자마자 실패로 오는 경우 (글자 없음 등)
 
   let status = job.status;
   let delay = job.pollAfterMs || 1000;
@@ -313,15 +348,11 @@ export async function analyzePhoto(file: File, childId: string, signal: AbortSig
   while (status === 'QUEUED' || status === 'RUNNING') {
     if (Date.now() > deadline) throw new ApiError(408, 'ANALYSIS_TIMEOUT', '분석이 오래 걸리고 있어요. 다시 시도해 주세요.', true);
     await abortableWait(delay, signal);
-    const j = await request<{ status: string; progress: number; pollAfterMs?: number; errorCode?: string; errorMessage?: string }>(
-      `/analysis-jobs/${job.jobId}`, { signal });
+    const j = await request<JobState>(`/analysis-jobs/${job.jobId}`, { signal });
     status = j.status;
     delay = j.pollAfterMs || 1000;
-    onProgress?.(j.progress);
-    // 끝난 상태는 COMPLETED 말고도 FAILED, REJECTED, CANCELLED 가 있다.
-    if (status !== 'QUEUED' && status !== 'RUNNING' && status !== 'COMPLETED') {
-      throw new ApiError(422, j.errorCode ?? 'ANALYSIS_FAILED', j.errorMessage ?? '글자를 읽지 못했어요. 다시 찍어 주세요.');
-    }
+    if (j.progress != null) onProgress?.(j.progress);
+    throwIfFailed(j);
   }
   const result = await request<{ pageId: string; expressions: ScanExpression[] }>(
     `/books/pages/${page.pageId}/analysis`, { signal });
@@ -330,8 +361,10 @@ export async function analyzePhoto(file: File, childId: string, signal: AbortSig
 
 function abortableWait(ms: number, signal: AbortSignal) {
   return new Promise<void>((resolve, reject) => {
-    const t = setTimeout(resolve, ms);
-    signal.addEventListener('abort', () => { clearTimeout(t); reject(new DOMException('aborted', 'AbortError')); }, { once: true });
+    if (signal.aborted) { reject(new DOMException('aborted', 'AbortError')); return; }
+    const onAbort = () => { clearTimeout(t); reject(new DOMException('aborted', 'AbortError')); };
+    const t = setTimeout(() => { signal.removeEventListener('abort', onAbort); resolve(); }, ms);
+    signal.addEventListener('abort', onAbort, { once: true });
   });
 }
 
@@ -362,7 +395,7 @@ export const talkFeedbackTips = (word: Word) => {
 export async function sendToChild(word: Word, text: string, turn: number): Promise<ChildReply> {
   await wait(1300);
   const stem = word.text.split(' ')[0];
-  const wrong = new RegExp(`${stem}(을|를)\\s*(해|하)`);
+  const wrong = new RegExp(`${escapeRe(stem)}(을|를)\\s*(해|하)`);
   if (wrong.test(text)) {
     return { text: '응? 다시 말해 줘!', feedback: { tips: talkFeedbackTips(word) } };
   }

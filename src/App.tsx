@@ -19,6 +19,7 @@ import { PracticeFeedbackPage } from './pages/practice/PracticeFeedbackPage';
 import { TalkIntroPage } from './pages/talk/TalkIntroPage';
 import { TalkChatPage } from './pages/talk/TalkChatPage';
 import { TalkCompletePage } from './pages/talk/TalkCompletePage';
+import { RequireBook, RequireWord } from './components/NotFound';
 
 export default function App() {
   const [profile, setProfile] = useProfile();
@@ -47,17 +48,17 @@ export default function App() {
         <Route path="/home" element={<HomePage profile={profile} />} />
         <Route path="/settings" element={<SettingsPage profile={profile} onSave={setProfile} />} />
         <Route path="/books" element={<BookListPage />} />
-        <Route path="/books/:bookId" element={<WordListPage />} />
+        <Route path="/books/:bookId" element={<RequireBook><WordListPage /></RequireBook>} />
         <Route path="/scan" element={<ScanPage />} />
         <Route path="/scan/empty" element={<ScanEmptyPage />} />
         <Route path="/scan/analyzing" element={<ScanAnalyzingPage profile={profile} onSave={setProfile} />} />
-        <Route path="/words/:wordId" element={<WordDetailPage />} />
-        <Route path="/words/:wordId/practice" element={<PracticeWritePage />} />
-        <Route path="/words/:wordId/practice/reviewing" element={<PracticeReviewingPage profile={profile} onSave={setProfile} />} />
-        <Route path="/words/:wordId/practice/feedback" element={<PracticeFeedbackPage />} />
-        <Route path="/words/:wordId/talk" element={<TalkIntroPage profile={profile} />} />
-        <Route path="/words/:wordId/talk/chat" element={<TalkChatPage profile={profile} onSave={setProfile} />} />
-        <Route path="/words/:wordId/talk/complete" element={<TalkCompletePage profile={profile} />} />
+        <Route path="/words/:wordId" element={<RequireWord><WordDetailPage /></RequireWord>} />
+        <Route path="/words/:wordId/practice" element={<RequireWord><PracticeWritePage /></RequireWord>} />
+        <Route path="/words/:wordId/practice/reviewing" element={<RequireWord><PracticeReviewingPage profile={profile} onSave={setProfile} /></RequireWord>} />
+        <Route path="/words/:wordId/practice/feedback" element={<RequireWord><PracticeFeedbackPage /></RequireWord>} />
+        <Route path="/words/:wordId/talk" element={<RequireWord><TalkIntroPage profile={profile} /></RequireWord>} />
+        <Route path="/words/:wordId/talk/chat" element={<RequireWord><TalkChatPage profile={profile} onSave={setProfile} /></RequireWord>} />
+        <Route path="/words/:wordId/talk/complete" element={<RequireWord><TalkCompletePage profile={profile} /></RequireWord>} />
         <Route path="*" element={<Navigate to="/home" replace />} />
       </Routes>
     </div>

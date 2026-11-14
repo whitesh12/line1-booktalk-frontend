@@ -11,6 +11,9 @@ export class MicError extends Error {
 }
 
 const TYPES = ['audio/webm;codecs=opus', 'audio/webm', 'audio/mp4', 'audio/ogg;codecs=opus'];
+// 사파리는 webm 으로 녹음할 수 있어도 다시 읽지(decode) 못할 수 있어서 mp4 를 먼저 쓴다
+const IS_SAFARI = typeof navigator !== 'undefined' && /^((?!chrome|chromium|android|crios|fxios).)*safari/i.test(navigator.userAgent);
+const PREFERRED = IS_SAFARI ? ['audio/mp4', ...TYPES.filter((t) => t !== 'audio/mp4')] : TYPES;
 
 export interface Recording {
   /** 녹음을 멈추고 녹음 파일을 돌려준다 */
@@ -49,8 +52,16 @@ export async function startRecording(opts: RecordOptions = {}): Promise<Recordin
     if (name === 'NotAllowedError' || name === 'SecurityError') throw new MicError('DENIED', '마이크 권한을 허용하면 말로 입력할 수 있어요.');
     throw new MicError('NO_MIC', '마이크를 찾지 못했어요. 글로 입력해 주세요.');
   }
-  const mimeType = TYPES.find((t) => MediaRecorder.isTypeSupported?.(t));
-  const rec = new MediaRecorder(stream, mimeType ? { mimeType } : undefined);
+  const mimeType = PREFERRED.find((t) => MediaRecorder.isTypeSupported?.(t));
+  let rec: MediaRecorder;
+  try {
+    rec = new MediaRecorder(stream, mimeType ? { mimeType } : undefined);
+  } catch {
+    // 녹음기를 만들지 못하면 켜 둔 마이크를 바로 끈다 (마이크 표시가 계속 켜져 있지 않게)
+    stream.getTracks().forEach((t) => t.stop());
+    meterCtx?.close?.().catch(() => {});
+    throw new MicError('UNSUPPORTED', '이 브라우저에서는 마이크 입력을 쓸 수 없어요. 글로 입력해 주세요.');
+  }
   const chunks: Blob[] = [];
   rec.ondataavailable = (e) => { if (e.data.size) chunks.push(e.data); };
   let meter: ReturnType<typeof setInterval> | undefined;
@@ -62,7 +73,12 @@ export async function startRecording(opts: RecordOptions = {}): Promise<Recordin
   const done = new Promise<Blob>((resolve) => {
     rec.onstop = () => { release(); resolve(new Blob(chunks, { type: rec.mimeType || mimeType || 'audio/webm' })); };
   });
-  rec.start();
+  try {
+    rec.start();
+  } catch {
+    release();
+    throw new MicError('UNSUPPORTED', '이 브라우저에서는 마이크 입력을 쓸 수 없어요. 글로 입력해 주세요.');
+  }
   const started = Date.now();
   const autoStop = (reason: AutoStopReason) => { if (rec.state === 'recording') { rec.stop(); opts.onAutoStop?.(reason); } };
 
@@ -127,8 +143,14 @@ export async function toWav(blob: Blob, rate = 16_000): Promise<Blob> {
   } finally {
     ctx.close?.().catch(() => {});
   }
-  // 16kHz 모노로 다시 샘플링
-  const off = new OAC(1, Math.max(1, Math.ceil(decoded.duration * rate)), rate);
+  // 16kHz 모노로 다시 샘플링 (예전 사파리는 22050Hz 보다 낮은 값을 못 써서 그때는 22050Hz 로)
+  let off: OfflineAudioContext;
+  try {
+    off = new OAC(1, Math.max(1, Math.ceil(decoded.duration * rate)), rate);
+  } catch {
+    rate = 22_050;
+    off = new OAC(1, Math.max(1, Math.ceil(decoded.duration * rate)), rate);
+  }
   const src = off.createBufferSource();
   src.buffer = decoded;
   src.connect(off.destination);

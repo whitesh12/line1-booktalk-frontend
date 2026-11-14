@@ -22,6 +22,8 @@ export function ScanPage() {
   const [preparing, setPreparing] = useState(false); // 사진 줄이는 중
   const busy = useRef(false); // 셔터 연타 막기
   const [photoError, setPhotoError] = useState<string | null>(null); // 용량 초과 등
+  const mounted = useRef(true);
+  useEffect(() => { mounted.current = true; return () => { mounted.current = false; }; }, []);
 
   // 화면 안에 카메라(후면) 미리보기를 띄운다. 권한이 없거나 카메라가 없으면 예전처럼 눌러서 카메라 앱을 연다.
   useEffect(() => {
@@ -54,6 +56,7 @@ export function ScanPage() {
     setPreparing(true);
     try {
       const photo = await preparePhoto(f);
+      if (!mounted.current) return; // 준비하는 사이에 다른 화면으로 갔으면 분석 화면으로 끌고 가지 않는다
       streamRef.current?.getTracks().forEach((t) => t.stop());
       setPendingPhoto(photo);
       nav('/scan/analyzing');
@@ -61,7 +64,7 @@ export function ScanPage() {
       setFlash(false);
       setPhotoError(e instanceof PhotoError ? e.message : '사진을 준비하지 못했어요. 다시 찍거나 골라 주세요.');
     } finally {
-      setPreparing(false);
+      if (mounted.current) setPreparing(false);
       busy.current = false;
     }
   }
@@ -98,7 +101,13 @@ export function ScanPage() {
   const corner = (pos: React.CSSProperties, sides: string) => (
     <span style={{ position: 'absolute', zIndex: 2, width: 44, height: 44, ...pos, borderStyle: 'solid', borderColor: 'var(--mint)', borderWidth: 0, ...Object.fromEntries(sides.split(' ').map((s) => [`border${s}Width`, 4])) }} />
   );
-  const onPick = (e: React.ChangeEvent<HTMLInputElement>) => { const f = e.target.files?.[0]; e.target.value = ''; if (f) submitPhoto(f); };
+  const onPick = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const f = e.target.files?.[0];
+    e.target.value = '';
+    if (!f || busy.current) return; // 찍은 사진을 준비하는 중이면 두 번 보내지 않는다
+    busy.current = true;
+    submitPhoto(f);
+  };
 
   return (
     // 휴대폰 화면 높이에 딱 맞춘다 (넘치면 스크롤되면서 하단 탭 바가 셔터를 가렸다). 카메라 틀이 남는 공간만큼 줄어든다.
@@ -151,8 +160,8 @@ export function ScanPage() {
       <div style={{ flex: 'none', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 10, padding: '16px 20px 16px' }}>
         <div style={{ position: 'relative', width: '100%', display: 'flex', justifyContent: 'center' }}>
           {/* 앨범에서 고르기 (셔터 왼쪽) */}
-          <button type="button" aria-label="앨범에서 사진 고르기" onClick={() => albumRef.current?.click()}
-            style={{ position: 'absolute', left: 'calc(50% - 116px)', top: 15, width: 48, height: 48, borderRadius: 14, border: '1.5px solid #3A4154', background: '#232838', color: '#E6EAF2', display: 'grid', placeItems: 'center', cursor: 'pointer' }}>
+          <button type="button" aria-label="앨범에서 사진 고르기" disabled={preparing} onClick={() => { if (!busy.current) albumRef.current?.click(); }}
+            style={{ position: 'absolute', left: 'calc(50% - 116px)', top: 15, width: 48, height: 48, borderRadius: 14, border: '1.5px solid #3A4154', background: '#232838', color: '#E6EAF2', display: 'grid', placeItems: 'center', cursor: 'pointer', opacity: preparing ? 0.5 : 1 }}>
             <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.9} strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><rect x="3" y="4" width="18" height="16" rx="3" /><circle cx="9" cy="10" r="1.8" /><path d="M21 16l-5-5-8 9" /></svg>
           </button>
           <button aria-label="촬영" onClick={shoot} disabled={cam === 'starting' || preparing} style={{ width: 78, height: 78, borderRadius: '50%', border: '4px solid #fff', background: 'transparent', padding: 0, display: 'grid', placeItems: 'center', cursor: 'pointer', opacity: cam === 'starting' || preparing ? 0.5 : 1 }}>

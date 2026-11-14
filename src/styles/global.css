@@ -51,10 +51,10 @@ a { color: var(--primary); }
 .header { height: 56px; flex: none; display: flex; align-items: center; gap: 4px; padding: 0 8px; }
 .header.white { background: var(--surface); border-bottom: 1px solid var(--border); }
 .header.center { justify-content: center; }
-.header h1 { margin: 0; font-size: 18px; font-weight: 700; }
+.header h1 { margin: 0; font-size: 18px; font-weight: 700; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .icon-btn { width: 44px; height: 44px; border: 0; background: none; display: grid; place-items: center; color: var(--text); cursor: pointer; border-radius: 12px; }
 .page-title { padding: 28px 20px 8px; }
-.page-title h1 { margin: 0; font-size: 24px; font-weight: 800; }
+.page-title h1 { margin: 0; font-size: 24px; font-weight: 800; overflow-wrap: anywhere; }
 .page-title p { margin: 4px 0 0; font-size: 15px; color: var(--text-sub); }
 
 .btn { display: flex; align-items: center; justify-content: center; gap: 8px; width: 100%; height: 56px; border-radius: var(--radius-btn); border: 0; font-size: 17px; font-weight: 700; text-decoration: none; cursor: pointer; }

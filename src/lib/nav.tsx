@@ -110,3 +110,13 @@ export function GoLink({ to, state, onClick, ...rest }: AnchorHTMLAttributes<HTM
     }} />
   );
 }
+
+/** '다시 찍기': 바로 앞이 촬영 화면이면 그리로 돌아가고, 아니면 지금 화면을 촬영 화면으로 바꾼다 (기록이 쌓이지 않게) */
+export function useRetake() {
+  const navigate = useNavigate();
+  return useCallback(() => {
+    const prev = readStack()[historyIdx() - 1];
+    if (historyIdx() > 0 && prev && pathOf(prev) === '/scan') navigate(-1);
+    else navigate('/scan', { replace: true });
+  }, [navigate]);
+}

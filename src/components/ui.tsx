@@ -1,9 +1,9 @@
-import { useEffect, useState, type ReactNode } from 'react';
+import { useEffect, useState, type ReactNode, Fragment } from 'react';
 import { useLocation } from 'react-router-dom';
 import type { Motion, WordType } from '../data/content';
 import { useBack, useGo } from '../lib/nav';
 import { loadProfile } from '../store/profile';
-import { canUseServerTts, hasCachedSpeech, synthesize, ttsQuotaOut } from '../api/ai';
+import { canUseServerTts, hasCachedSpeech, synthesize, ttsQuotaOut, forgetSpeech } from '../api/ai';
 
 const S = { fill: 'none', stroke: 'currentColor', strokeWidth: 2, strokeLinecap: 'round', strokeLinejoin: 'round' } as const;
 export const Icon = {
@@ -76,8 +76,18 @@ export function TabBar({ onLeave }: { onLeave?: (leave: () => void) => void }) {
 
 const NBSP = String.fromCharCode(0xa0);
 const STAGGER: Partial<Record<NonNullable<Motion>, number>> = { twinkle: 0.37, tiptoe: 0.25, sob: 0.2, widen: 0.07 };
-export function AnimWord({ text, motion, mode = 'hover' }: { text: string; motion: Motion; mode?: 'loop' | 'hover' | 'none' }) {
+export function AnimWord({ text, motion, mode = 'hover', wrap = false }: { text: string; motion: Motion; mode?: 'loop' | 'hover' | 'none'; wrap?: boolean }) {
   if (!motion || mode === 'none') return <>{text}</>;
+  // 긴 관용 표현은 띄어쓰기에서 줄을 바꿀 수 있게 어절마다 따로 움직인다 (한 줄로 두면 화면 밖으로 넘친다)
+  if (wrap && text.includes(' ')) {
+    return (
+      <span aria-label={text}>
+        {text.split(' ').filter(Boolean).map((part, k) => (
+          <Fragment key={k}>{k > 0 && ' '}<span aria-hidden="true"><AnimWord text={part} motion={motion} mode={mode} /></span></Fragment>
+        ))}
+      </span>
+    );
+  }
   const step = STAGGER[motion] ?? 0.13;
   return (
     <span className={`mw mw-${motion} ${mode}`} aria-label={text}>
@@ -176,14 +186,22 @@ export function speak(text: string, rate = Number(loadProfile().speed) || 1) {
   // 오늘 한도가 떨어졌으면 서버에 저장된 음성만 받을 수 있어서(빠르게 옴) 짧게만 기다린다
   const waitMs = ttsQuotaOut() && !hasCachedSpeech(text) ? 3000 : TTS_MAX_WAIT_MS;
   const timeout = new Promise<never>((_, reject) => setTimeout(() => reject(new Error('TTS_TIMEOUT')), waitMs));
+  const wasCached = hasCachedSpeech(text);
+  const play = (url: string) => {
+    if (seq !== speakSeq) return;
+    setLoading(null);
+    audio.src = url;
+    audio.playbackRate = rate; // 서버는 같은 파일을 주고 빠르기는 재생할 때 바꾼다
+    return audio.play();
+  };
   Promise.race([synthesize(text), timeout])
-    .then((url) => {
-      if (seq !== speakSeq) return;
-      setLoading(null);
-      audio.src = url;
-      audio.playbackRate = rate; // 서버는 같은 파일을 주고 빠르기는 재생할 때 바꾼다
-      return audio.play();
-    })
+    .then((url) => play(url)?.catch((err) => {
+      // 저장해 둔 주소의 파일이 서버에서 없어졌으면(재배포 등) 저장을 지우고 한 번만 새로 받아 재생한다
+      if (!wasCached || seq !== speakSeq) throw err;
+      forgetSpeech(text);
+      setLoading(text);
+      return Promise.race([synthesize(text), timeout]).then((u) => play(u));
+    }))
     .catch((e) => {
       if (seq !== speakSeq) return;
       setLoading(null);

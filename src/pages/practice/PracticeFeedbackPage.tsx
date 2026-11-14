@@ -76,7 +76,7 @@ export function PracticeFeedbackPage() {
         </div>
         {(meaning || missing) && (
           <div className="card selected" style={{ ...cardPad, display: 'flex', flexDirection: 'column', gap: 6 }}>
-            <p className="card-label teal" style={{ margin: 0 }}>‘{w.text}’은 이런 뜻이에요</p>
+            <p className="card-label teal" style={{ margin: 0 }}>‘{w.text}’{josa(w.text, '은', '는')} 이런 뜻이에요</p>
             <p style={{ margin: 0, fontSize: 16, fontWeight: 700, lineHeight: 1.55 }}>{w.meaning}</p>
             <p style={{ margin: 0, fontSize: 14, lineHeight: 1.6, color: 'var(--text-body)' }}>{fb.explain ?? w.nuance}</p>
             {meaningTr(w) && <p style={{ margin: 0, fontSize: 13, color: 'var(--text-sub)' }}>{meaningTr(w)}</p>}

@@ -26,7 +26,7 @@ function useAiVocabulary(wordId: string) {
   const [ai, setAi] = useState<VocabDetail | undefined>(() => (usable ? cachedVocabulary(vocabId!, lang) : undefined));
   const [loading, setLoading] = useState(false);
   useEffect(() => {
-    if (!usable) { setAi(undefined); return; }
+    if (!usable) { setAi(undefined); setLoading(false); return; }
     let alive = true;
     setAi(cachedVocabulary(vocabId!, lang));
     setLoading(true);
@@ -69,7 +69,7 @@ export function WordDetailPage() {
   const scene = bookScene || ai?.sourceSentence?.ko || sceneFor(w, book);
   const fromBook = !!book && (isScanBook(book.id) || !!bookScene);
   const wordLoading = useSpeechLoading(w.text);
-  const sceneLoading = useSpeechLoading(scene);
+  const sceneLoading = useSpeechLoading(scene ?? '');
   // 단어를 열어 본 것도 학습 기록으로 남긴다 (홈의 '최근 학습한 단어')
   useEffect(() => { trackLearning(base.id, 'viewed', book?.id); }, [base.id, book?.id]);
   const extra: (typeof DETAIL)[string] = ai ? {} : DETAIL[w.id] ?? {};
@@ -88,8 +88,8 @@ export function WordDetailPage() {
       <Header title={w.text} to={book ? `/books/${book.id}` : '/books'} />
       <div className="content" style={{ paddingTop: 4 }}>
         <div style={{ height: 236, borderRadius: 26, background: 'var(--mint-soft)', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 18, textAlign: 'center' }}>
-          <span style={{ fontWeight: 800, letterSpacing: '-0.02em', fontSize: w.text.length > 5 ? 36 : 66, color: 'var(--primary-dark)', lineHeight: 1.2 }}>
-            <AnimWord text={w.text} motion={w.motion} mode="loop" />
+          <span style={{ fontWeight: 800, letterSpacing: '-0.02em', fontSize: w.text.length > 12 ? 28 : w.text.length > 5 ? 36 : 66, color: 'var(--primary-dark)', lineHeight: 1.3, padding: '0 16px' }}>
+            <AnimWord text={w.text} motion={w.motion} mode="loop" wrap />
           </span>
           <button type="button" onClick={() => speak(w.text)} aria-busy={wordLoading} className={wordLoading ? 'tts-loading' : undefined} style={{ display: 'inline-flex', alignItems: 'center', gap: 8, height: 44, padding: '0 18px', borderRadius: 999, border: 0, background: '#fff', color: 'var(--primary)', fontSize: 15, fontWeight: 700, cursor: 'pointer' }}>
             {Icon.speaker(20)}{wordLoading ? '불러오는 중…' : '발음 듣기'}
@@ -106,28 +106,30 @@ export function WordDetailPage() {
           {tr && <p style={{ margin: 0, fontSize: 14, color: 'var(--text-sub)' }}>{tr}</p>}
         </section>
 
-        <section className="card" style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+        {/* 뜻 말고 더 보여 줄 설명이 없으면(AI 설명을 받기 전의 찍은 표현 등) 이 칸을 숨긴다 */}
+        {(w.nuance !== w.meaning || !!w.nuanceVi || w.usage.length > 0) && <section className="card" style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
           <h2 style={sectionTitle}>이럴 때 써요</h2>
           <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
-            <p style={{ margin: 0, fontSize: 16, lineHeight: 1.55 }}>{w.nuance}</p>
+            {w.nuance !== w.meaning && <p style={{ margin: 0, fontSize: 16, lineHeight: 1.55 }}>{w.nuance}</p>}
             {w.nuanceVi && <p style={{ margin: 0, fontSize: 14, color: 'var(--text-sub)' }}>{w.nuanceVi}</p>}
           </div>
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 8, borderTop: '1px solid #EEF0F4', paddingTop: 12 }}>
-            {w.usage.map((u) => (
-              <div key={u.label} style={{ display: 'flex', gap: 10, fontSize: 15, lineHeight: 1.5 }}>
+          {w.usage.length > 0 && <div style={{ display: 'flex', flexDirection: 'column', gap: 8, ...(w.nuance !== w.meaning ? { borderTop: '1px solid #EEF0F4', paddingTop: 12 } : {}) }}>
+            {w.usage.map((u, i) => (
+              <div key={i} style={{ display: 'flex', gap: 10, fontSize: 15, lineHeight: 1.5 }}>
                 <b style={{ flex: 'none', color: 'var(--primary)' }}>{u.label}</b><span style={{ color: 'var(--text-body)' }}>{u.text}</span>
               </div>
             ))}
-          </div>
-        </section>
+          </div>}
+        </section>}
 
-        <section className="card" style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+        {/* 사진에서 찾은 표현에 문장이 없으면 이 칸을 숨긴다 */}
+        {scene && <section className="card" style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
             <h2 style={sectionTitle}>{fromBook ? '그림책 속 문장' : '예문'}</h2>
             <button type="button" aria-label={sceneLoading ? '문장 음성 불러오는 중' : '문장 읽어주기'} aria-busy={sceneLoading} className={sceneLoading ? 'tts-loading' : undefined} onClick={() => speak(scene)} style={{ width: 44, height: 44, borderRadius: '50%', border: 0, background: 'var(--primary)', color: '#fff', display: 'grid', placeItems: 'center', cursor: 'pointer' }}>{Icon.play()}</button>
           </div>
           <p style={{ margin: 0, fontSize: 18, lineHeight: 1.7 }}><Highlight sentence={scene} word={w.text} /></p>
-        </section>
+        </section>}
 
         {w.similar.length > 0 && (
           <>

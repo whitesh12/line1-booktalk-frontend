@@ -30,9 +30,12 @@ export function WordListPage() {
   const [editing, setEditing] = useState(false);
   const [draft, setDraft] = useState('');
   const inputRef = useRef<HTMLInputElement>(null);
+  const closed = useRef(true); // 이미 저장했거나 취소했으면 blur 로 또 저장하지 않는다
   useEffect(() => { setTitle(book.title); setEditing(false); }, [book.id, book.title]);
   useEffect(() => { if (editing) inputRef.current?.select(); }, [editing]);
   const save = () => {
+    if (closed.current) return;
+    closed.current = true;
     const t = draft.trim().slice(0, 30);
     if (renameScanBook(book.id, t)) {
       setTitle(t);
@@ -54,7 +57,7 @@ export function WordListPage() {
               style={{ flex: 1, minWidth: 0, background: '#fff', border: '1.5px solid var(--primary)', padding: '3px 4px 3px 12px', fontSize: 13, color: 'var(--text-body)' }}>
               {Icon.book(16)}
               <input ref={inputRef} aria-label="책 이름" value={draft} onChange={(e) => setDraft(e.target.value)}
-                onBlur={save} onKeyDown={(e) => { if (e.key === 'Escape') { e.preventDefault(); setEditing(false); } }}
+                onBlur={save} onKeyDown={(e) => { if (e.key === 'Escape') { e.preventDefault(); closed.current = true; setEditing(false); } }}
                 style={{ flex: 1, minWidth: 0, border: 0, outline: 'none', background: 'transparent', font: 'inherit', fontWeight: 700, color: 'var(--text)', padding: '4px 0' }} />
               <button type="submit" aria-label="이름 저장" onMouseDown={(e) => e.preventDefault()}
                 style={{ flex: 'none', width: 28, height: 28, borderRadius: '50%', border: 0, background: 'var(--primary)', display: 'grid', placeItems: 'center', cursor: 'pointer' }}>{Icon.check(14)}</button>
@@ -64,7 +67,7 @@ export function WordListPage() {
               {Icon.book(16)}
               <span style={{ minWidth: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{title}{book.page && ` · ${book.page}`}</span>
               {mine && (
-                <button type="button" aria-label="책 이름 바꾸기" title="책 이름 바꾸기" onClick={() => { setDraft(title); setEditing(true); }}
+                <button type="button" aria-label="책 이름 바꾸기" title="책 이름 바꾸기" onClick={() => { setDraft(title); closed.current = false; setEditing(true); }}
                   style={{ flex: 'none', width: 28, height: 28, borderRadius: '50%', border: 0, background: 'var(--mint-soft)', color: 'var(--primary)', display: 'grid', placeItems: 'center', cursor: 'pointer' }}>{Icon.pencil(14)}</button>
               )}
             </span>

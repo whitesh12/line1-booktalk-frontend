@@ -27,5 +27,6 @@ export const wordVi = (w: Word) => DETAIL[w.id]?.vi ?? w.vi;
 
 export const guideFor = (w: Word): GuideStep[] => DETAIL[w.id]?.guide ?? [
   { title: '몸으로 느껴봐요', items: [{ text: w.tip }] },
-  { title: '상황이 생길 때마다 말해줘요', items: w.examples.map((e) => ({ text: `“${e}”` })) },
+  // 예문이 없는 단어(사진에서 찾은 표현 등)는 빈 칸을 보여 주지 않는다
+  ...(w.examples.length ? [{ title: '상황이 생길 때마다 말해줘요', items: w.examples.map((e) => ({ text: `“${e}”` })) }] : []),
 ];

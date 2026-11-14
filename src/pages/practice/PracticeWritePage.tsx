@@ -40,7 +40,7 @@ export function PracticeWritePage() {
           {tooLong && <span role="alert" style={{ fontSize: 13, color: 'var(--coral)' }}>문장은 {MAX_SENTENCE}자까지 쓸 수 있어요. (지금 {text.trim().length}자)</span>}
           {voiceMissed && !tooLong && (
             <div role="alert" style={{ display: 'flex', flexDirection: 'column', gap: 4, padding: '10px 12px', borderRadius: 12, background: 'var(--coral-soft)', color: '#8A3A28', fontSize: 13, lineHeight: 1.5 }}>
-              <b>‘{heard}’{ro(heard!)} 알아들었어요. ‘{w.text}’{josa(w.text, '이', '가')} 들리지 않았어요.</b>
+              <b>‘{heard}’{ro(heard!.replace(/[\s.,!?~…。]+$/, ''))} 알아들었어요. ‘{w.text}’{josa(w.text, '이', '가')} 들리지 않았어요.</b>
               <span>고쳐 쓰거나 다시 말해 주세요. 흉내말은 또박또박, 천천히 말하면 더 잘 알아들어요.</span>
             </div>
           )}

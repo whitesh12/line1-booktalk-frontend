@@ -1,5 +1,5 @@
 import { useSearchParams } from 'react-router-dom';
-import { GoLink } from '../../lib/nav';
+import { GoLink, useRetake } from '../../lib/nav';
 import { Header, Icon, TabBar } from '../../components/ui';
 
 /**
@@ -38,6 +38,7 @@ const CASES = {
 export function ScanEmptyPage() {
   const reason = useSearchParams()[0].get('reason') === 'no-text' ? 'no-text' : 'no-expressions';
   const c = CASES[reason];
+  const retake = useRetake();
   return (
     <div className="screen">
       <Header title="표현 찾기" to="/books" />
@@ -55,7 +56,7 @@ export function ScanEmptyPage() {
         </div>
       </div>
       <div className="bottom-bar sticky" style={{ flexDirection: 'column' }}>
-        <GoLink to="/scan" className="btn btn-primary">{Icon.camera(20)}{c.primary}</GoLink>
+        <button type="button" className="btn btn-primary" onClick={retake}>{Icon.camera(20)}{c.primary}</button>
         <GoLink to="/books" className="btn btn-outline" style={{ fontSize: 16 }}>예시 동화책으로 배우기</GoLink>
       </div>
       <TabBar />

@@ -22,7 +22,7 @@ export function loadLearning(): LearnRecord[] {
   try {
     const v = JSON.parse(localStorage.getItem(KEY) ?? '[]');
     // 깨진 데이터가 있어도 홈이 멈추지 않게 올바른 기록만 남긴다
-    return Array.isArray(v) ? v.filter((r) => r && typeof r.wordId === 'string' && typeof r.at === 'number') : [];
+    return Array.isArray(v) ? v.filter((r) => r && typeof r.wordId === 'string' && typeof r.at === 'number' && ORDER.includes(r.stage)) : [];
   } catch { return []; }
 }
 

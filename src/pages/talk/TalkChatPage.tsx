@@ -5,7 +5,7 @@ import { formatElapsed, useVoiceInput } from '../../lib/useVoiceInput';
 import { LevelBars } from '../../components/ui';
 import type { Word } from '../../data/content';
 import { isIntentionalNav, useGo } from '../../lib/nav';
-import { ApiError, MAX_TURNS, USE_MOCK, childScript, openingLine, sendToChild, talkFeedbackTips, withChild } from '../../api/client';
+import { ApiError, MAX_TURNS, USE_MOCK, childScript, escapeRe, uuid, openingLine, sendToChild, talkFeedbackTips, withChild } from '../../api/client';
 import { finishTalk, loadDemoVocab, sendTalk, startTalk, trackLearning, type TalkSession, type TalkTurn } from '../../api/ai';
 import { recordLearning } from '../../store/learning';
 import { serverVocabId } from '../../data/scanned';
@@ -50,6 +50,8 @@ export function TalkChatPage({ profile, onSave }: { profile: Profile; onSave: (p
   const [notice, setNotice] = useState<string | null>(null);
   const [aiHint, setAiHint] = useState<string | null>(null);
   const [liveDone, setLiveDone] = useState(false);
+  // 보내기에 실패한 메시지. 같은 내용을 다시 보내면 같은 id 를 써서 서버에 두 번 기록되지 않게 한다
+  const unsent = useRef<{ text: string; id: string } | null>(null);
 
   const [seed] = useState(() => (wantLive ? { msgs: [] as Msg[], turn: 0, waiting: true } : demoSeed(demo, w, profile.childName)));
   const [msgs, setMsgs] = useState<Msg[]>(seed.msgs);
@@ -113,8 +115,11 @@ export function TalkChatPage({ profile, onSave }: { profile: Profile; onSave: (p
 
   async function sendLive(t: string, before: Msg[]) {
     let r: TalkTurn;
+    const id = unsent.current?.text === t ? unsent.current.id : uuid();
+    unsent.current = { text: t, id };
     try {
-      r = await sendTalk(session.current!, t);
+      r = await sendTalk(session.current!, t, id);
+      unsent.current = null;
     } catch (e) {
       console.warn('[conversation] 메시지 전송 실패', e);
       setMsgs(before); // 보내기 전 화면(이전 피드백 포함)으로 되돌린다
@@ -122,6 +127,7 @@ export function TalkChatPage({ profile, onSave }: { profile: Profile; onSave: (p
       // 서버에서 대화가 사라졌으면(재시작·만료 등) 새 대화를 열어 이어 간다
       const gone = e instanceof ApiError && [400, 404, 409, 410].includes(e.status);
       if (gone) {
+        unsent.current = null; // 새 대화에서는 새 메시지로 보낸다
         try {
           const s = await openLive();
           session.current = s.id;
@@ -220,7 +226,7 @@ export function TalkChatPage({ profile, onSave }: { profile: Profile; onSave: (p
           m.from === 'kid' ? (
             <KidMessage key={i} name={profile.childName}><p className="bubble-kid">{m.text}</p></KidMessage>
           ) : m.from === 'me' ? (
-            <p key={i} className="bubble-me">{m.text.split(new RegExp(`(${stem}${i === fixIdx ? '(?:을|를)?' : ''})`)).map((p, j) => (j % 2 ? <b key={j}>{p}</b> : <span key={j}>{p}</span>))}</p>
+            <p key={i} className="bubble-me">{m.text.split(new RegExp(`(${escapeRe(stem)}${i === fixIdx ? '(?:을|를)?' : ''})`)).map((p, j) => (j % 2 ? <b key={j}>{p}</b> : <span key={j}>{p}</span>))}</p>
           ) : m.from === 'praise' ? (
             <p key={i} style={{ margin: '-4px 0 0', alignSelf: 'flex-end', maxWidth: '85%', fontSize: 13, lineHeight: 1.5, color: 'var(--primary)', textAlign: 'right' }}>{Icon.check(12, '#1C7A6C')} {m.text}</p>
           ) : (
@@ -258,7 +264,7 @@ export function TalkChatPage({ profile, onSave }: { profile: Profile; onSave: (p
         <form className="composer" onSubmit={(e) => { e.preventDefault(); send(); }}>
           <input id="talk-input" aria-label={retry ? '답변 다시 입력' : '답변 입력'} placeholder={waiting ? '답을 기다리는 중...' : retry ? '다시 답해 보세요' : '여기에 답해 보세요'}
             value={text} disabled={waiting} onChange={(e) => setText(e.target.value)} />
-          {!waiting && !retry && (
+          {!waiting && (
             <button type="button" className={`round mic${voice.state === 'recording' ? ' mic-rec' : ''}`} onClick={voice.toggle}
               disabled={voice.state === 'transcribing'} aria-pressed={voice.state === 'recording'}
               aria-label={voice.state === 'recording' ? '녹음 바로 끝내기' : voice.state === 'transcribing' ? '글로 바꾸는 중' : '말로 입력'}>

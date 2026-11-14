@@ -20,7 +20,11 @@ export function useVoiceInput(onText: (text: string) => void, hint?: string) {
   const cb = useRef(onText);
   cb.current = onText;
 
-  useEffect(() => () => { alive.current = false; rec.current?.cancel(); }, []);
+  const starting = useRef(false); // 마이크를 켜는 중 (권한 창이 떠 있는 동안 또 누르는 것을 막는다)
+  useEffect(() => {
+    alive.current = true; // 개발 모드(StrictMode)에서 다시 붙을 때도 살아 있게
+    return () => { alive.current = false; rec.current?.cancel(); rec.current = null; };
+  }, []);
 
   async function finish() {
     const r = rec.current;
@@ -42,7 +46,8 @@ export function useVoiceInput(onText: (text: string) => void, hint?: string) {
     }
   }
 
-  function onAutoStop(reason: AutoStopReason) {
+  function onAutoStop(reason: AutoStopReason, from: Recording | null) {
+    if (!from || from !== rec.current) return; // 이미 끝났거나 다른 녹음에서 온 신호는 무시
     if (reason === 'no-speech') {
       // 아무 말이 없었으면 서버로 보내지 않는다
       rec.current?.cancel();
@@ -58,15 +63,24 @@ export function useVoiceInput(onText: (text: string) => void, hint?: string) {
   async function toggle() {
     if (state === 'transcribing') return;
     if (state === 'recording') { await finish(); return; }
+    if (starting.current || rec.current) return;
+    starting.current = true;
     try {
       setElapsedMs(0);
-      rec.current = await startRecording({
-        onLevel: (l, ms) => { if (alive.current) { setLevel(l); setElapsedMs(ms); } },
-        onAutoStop,
+      let mine: Recording | null = null;
+      const r = await startRecording({
+        onLevel: (l, ms) => { if (alive.current && mine === rec.current) { setLevel(l); setElapsedMs(ms); } },
+        onAutoStop: (reason) => onAutoStop(reason, mine),
       });
+      mine = r;
+      // 마이크를 켜는 사이에 화면을 떠났으면 바로 끈다 (서버로 보내지 않음)
+      if (!alive.current) { r.cancel(); return; }
+      rec.current = r;
       setState('recording');
     } catch (e) {
-      toast(e instanceof MicError ? e.message : '마이크를 켜지 못했어요. 글로 입력해 주세요.');
+      if (alive.current) toast(e instanceof MicError ? e.message : '마이크를 켜지 못했어요. 글로 입력해 주세요.');
+    } finally {
+      starting.current = false;
     }
   }
 

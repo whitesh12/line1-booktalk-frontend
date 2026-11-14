@@ -121,16 +121,17 @@ function applyAll() {
     const ids: Record<string, string> = {};
     const trs: Record<string, { language: string; text: string }> = {};
     const scenes: Record<string, string> = {};
-    const wordIds = scan.expressions.filter(isLearnable).map((e) => {
+    // 글자가 없는 표현은 건너뛴다 (서버 응답이 빠져도 화면이 멈추지 않게)
+    const wordIds = scan.expressions.filter((e) => isLearnable(e) && typeof e.text === 'string' && !!e.text.trim()).map((e) => {
       const local = Object.values(WORDS).find((w) => w.text === e.text && !w.id.startsWith('exp_'));
       // 번역은 단어 카드에 넣지 않고 '언어와 함께' 따로 기억한다 → 설정 언어와 같을 때만 보여 준다.
       const word: Word = local ?? {
         // 모르는 종류면 태그를 숨기고(의태어로 잘못 보이지 않게), 처음 보는 단어도 움직임이 보이게
         id: e.id, text: e.text, type: TYPE[e.type] ?? null, motion: 'wave',
-        meaning: e.definition, vi: '',
-        nuance: e.definition, nuanceVi: '', usage: [],
+        meaning: e.definition ?? '', vi: '',
+        nuance: e.definition ?? '', nuanceVi: '', usage: [],
         examples: e.sourceSentence ? [e.sourceSentence] : [], similar: [],
-        tip: `그림책을 다시 보며 ‘${e.text}’이 나온 장면을 아이와 함께 찾아 보세요.`,
+        tip: `그림책을 다시 보며 ‘${e.text}’${hasBatchim(e.text) ? '이' : '가'} 나온 장면을 아이와 함께 찾아 보세요.`,
         image: '/images/logo.svg',
       };
       WORDS[word.id] = word;
@@ -193,3 +194,9 @@ export const peekPendingPhoto = () => pendingPhoto;
 
 // 새로고침해도 찍은 책들이 남아 있도록 불러온다.
 applyAll();
+
+/** 마지막 글자에 받침이 있는지 (조사 이/가 고르기) */
+function hasBatchim(t: string) {
+  const c = t.charCodeAt(t.length - 1);
+  return c >= 0xac00 && c <= 0xd7a3 && (c - 0xac00) % 28 > 0;
+}

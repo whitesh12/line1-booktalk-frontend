@@ -167,6 +167,12 @@ const ttsCache: Map<string, TtsEntry> = (() => {
 })();
 const ttsInflight = new Map<string, Promise<string>>();
 
+/** 저장해 둔 음성 주소를 지운다 (서버 재배포 등으로 파일이 없어져 재생이 안 될 때) */
+export function forgetSpeech(text: string) {
+  if (!ttsCache.delete(text)) return;
+  try { localStorage.setItem(TTS_KEY, JSON.stringify(Object.fromEntries(ttsCache))); } catch {}
+}
+
 /** 이 문장의 서버 음성을 이미 받아 두었는지 */
 export const hasCachedSpeech = (text: string) => !!cachedUrl(text);
 

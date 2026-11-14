@@ -14,7 +14,7 @@ export function TalkIntroPage({ profile }: { profile: Profile }) {
           <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
             <span className="pill" style={{ alignSelf: 'flex-start', background: 'var(--mint-soft)', color: 'var(--primary-dark)' }}>대화 파트너</span>
             <b style={{ fontSize: 19 }}>{callName(profile.childName)}와 이야기해요</b>
-            <span style={{ fontSize: 14, color: 'var(--text-sub)' }}>{profile.childAge}세 · {book.title}</span>
+            <span style={{ fontSize: 14, color: 'var(--text-sub)' }}>{book.title}</span>
           </div>
         </div>
         <h2 style={{ margin: '6px 0 0', fontSize: 17, fontWeight: 700 }}>오늘의 목표</h2>
