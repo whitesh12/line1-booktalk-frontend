@@ -69,23 +69,28 @@ export interface VocabDetail {
   practiceExample?: string;
 }
 
-const VOCAB_KEY = (id: string) => `booktalk.vocab.${id}`;
+const VOCAB_KEY = (id: string, lang: string) => `booktalk.vocab.${lang}.${id}`;
+/** 앱 언어 → 서버 언어 코드 */
+export const SERVER_LANG = { vi: 'vi', zh: 'zh-CN', en: 'en' } as const;
+type AppLang = keyof typeof SERVER_LANG;
 const vocabLoading = new Map<string, Promise<VocabDetail>>();
 
 /** 저장해 둔 단어 설명 (없으면 undefined). 화면을 바로 그리기 위해 쓴다. */
-export function cachedVocabulary(id: string): VocabDetail | undefined {
-  try { const raw = localStorage.getItem(VOCAB_KEY(id)); return raw ? JSON.parse(raw) : undefined; } catch { return undefined; }
+export function cachedVocabulary(id: string, lang: AppLang): VocabDetail | undefined {
+  try { const raw = localStorage.getItem(VOCAB_KEY(id, lang)); return raw ? JSON.parse(raw) : undefined; } catch { return undefined; }
 }
 
-export function fetchVocabulary(id: string): Promise<VocabDetail> {
-  let p = vocabLoading.get(id);
+/** 단어 설명을 설정한 설명 언어의 번역으로 받는다 (시연용 단어는 vi·zh-CN·en 모두, 사진 단어는 없으면 번역이 null) */
+export function fetchVocabulary(id: string, lang: AppLang): Promise<VocabDetail> {
+  const key = `${lang}:${id}`;
+  let p = vocabLoading.get(key);
   if (!p) {
-    p = request<VocabDetail>(`/vocabulary/${id}`).then((v) => {
-      try { localStorage.setItem(VOCAB_KEY(id), JSON.stringify(v)); } catch {}
+    p = request<VocabDetail>(`/vocabulary/${id}?language=${SERVER_LANG[lang]}`).then((v) => {
+      try { localStorage.setItem(VOCAB_KEY(id, lang), JSON.stringify(v)); } catch {}
       return v;
     });
-    p.catch(() => vocabLoading.delete(id)); // 실패하면 다음에 다시 시도
-    vocabLoading.set(id, p);
+    p.catch(() => vocabLoading.delete(key)); // 실패하면 다음에 다시 시도
+    vocabLoading.set(key, p);
   }
   return p;
 }
@@ -124,20 +129,17 @@ export async function startTalk(childId: string, vocabularyId: string): Promise<
     method: 'POST',
     body: JSON.stringify({ vocabularyId, scene: '그림책', difficulty: 'LEVEL_1', translationHintEnabled: true }),
   });
-  // 지난번에 끝내지 못한 대화가 있으면 먼저 끝낸다.
-  const prev = readActive();
-  if (prev?.childId === childId) await finishTalk(prev.sessionId);
+  // 새 대화를 시작하면 서버가 이전 대화를 자동으로 끝낸다.
+  // 그래도 막히면(409) 진행 중인 대화를 목록에서 찾아 끝내고 한 번 더 시도한다. (다른 기기에서 시작한 대화 포함)
   let s: TalkSession;
   try {
     s = await create();
   } catch (e) {
     if (!(e instanceof ApiError) || e.code !== 'ACTIVE_CONVERSATION_EXISTS') throw e;
-    // 거의 동시에 시작한 대화가 있으면 잠깐 뒤 기억해 둔 것을 끝내고 한 번 더 시도한다.
-    await new Promise((r) => setTimeout(r, 1200));
-    const again = readActive();
-    // 기억해 둔 대화가 없으면 (다른 기기·브라우저에서 시작한 대화) 끝낼 방법이 없다.
-    if (again?.childId !== childId) throw new ApiError(409, e.code, '다른 곳에서 진행 중인 대화가 있어요.');
-    await finishTalk(again.sessionId);
+    const active = await request<{ id: string }[]>(`/children/${childId}/conversation-sessions?status=ACTIVE`).catch(() => []);
+    const prev = readActive();
+    const ids = new Set([...active.map((a) => a.id), ...(prev?.childId === childId ? [prev.sessionId] : [])]);
+    for (const id of ids) await finishTalk(id);
     s = await create();
   }
   writeActive({ childId, sessionId: s.id });
@@ -207,4 +209,29 @@ export function synthesize(text: string): Promise<string> {
     ttsInflight.set(text, p);
   }
   return p;
+}
+
+/* ───────────── 책 이름 수정 (PATCH /books/{bookId}) ───────────── */
+
+/** 찍은 책 이름을 서버에도 저장한다 (실패해도 이 기기에는 저장돼 있다) */
+export async function renameServerBook(serverBookId: string, title: string): Promise<void> {
+  if (USE_MOCK || !hasToken()) return;
+  await request(`/books/${serverBookId}`, { method: 'PATCH', body: JSON.stringify({ title }) });
+}
+
+/* ───────────── 최근 학습한 단어 (GET /children/{childId}/recent-vocabulary) ───────────── */
+
+export interface RecentVocab {
+  vocabularyId: string;
+  text: string;
+  bookId?: string | null;
+  bookTitle?: string | null;
+  stage: 'VIEWED' | 'SENTENCE_DONE' | 'CONVERSATION_DONE' | string;
+  lastStudiedAt: string;
+}
+
+export async function fetchRecentVocabulary(limit = 10): Promise<RecentVocab[]> {
+  const childId = loadProfile().childId;
+  if (USE_MOCK || !hasToken() || !childId) return [];
+  return request<RecentVocab[]>(`/children/${childId}/recent-vocabulary?limit=${limit}`);
 }

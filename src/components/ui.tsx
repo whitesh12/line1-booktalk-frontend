@@ -162,13 +162,6 @@ export function useSpeechLoading(text: string): boolean {
 /** 읽어 주기. 단어든 문장이든 서버 음성(AI)으로 읽는다. 서버가 실패하거나 너무 늦을 때만 브라우저 음성. 속도는 내 정보 설정을 따른다. */
 export function speak(text: string, rate = Number(loadProfile().speed) || 1) {
   if (!canUseServerTts()) { browserSpeak(text, rate); return; }
-  // 아이폰은 브라우저 음성(speechSynthesis)을 '누른 순간'에만 시작할 수 있다.
-  // 오늘 AI 음성 사용량이 이미 떨어졌고 받아 둔 음성도 없으면, 서버를 기다리지 않고 바로 기본 음성으로 읽는다.
-  if (ttsQuotaOut() && !hasCachedSpeech(text)) {
-    toast('오늘 AI 음성 사용량을 다 써서 기본 음성으로 읽어요');
-    browserSpeak(text, rate);
-    return;
-  }
   const seq = ++speakSeq; // 연달아 누르면 마지막 것만 재생
   player ??= new Audio();
   const audio = player;
@@ -179,7 +172,9 @@ export function speak(text: string, rate = Number(loadProfile().speed) || 1) {
   audio.src = SILENCE;
   audio.play().catch(() => {});
   setLoading(text);
-  const timeout = new Promise<never>((_, reject) => setTimeout(() => reject(new Error('TTS_TIMEOUT')), TTS_MAX_WAIT_MS));
+  // 오늘 한도가 떨어졌으면 서버에 저장된 음성만 받을 수 있어서(빠르게 옴) 짧게만 기다린다
+  const waitMs = ttsQuotaOut() && !hasCachedSpeech(text) ? 3000 : TTS_MAX_WAIT_MS;
+  const timeout = new Promise<never>((_, reject) => setTimeout(() => reject(new Error('TTS_TIMEOUT')), waitMs));
   Promise.race([synthesize(text), timeout])
     .then((url) => {
       if (seq !== speakSeq) return;

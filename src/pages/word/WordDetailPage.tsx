@@ -22,19 +22,20 @@ function useAiVocabulary(wordId: string) {
   useVocabVersion(); // 시연용 단어 연결이 늦게 끝나면 다시 그려서 서버 id 를 잡는다
   const vocabId = serverVocabId(wordId);
   const usable = !!vocabId && !USE_MOCK && hasToken();
-  const [ai, setAi] = useState<VocabDetail | undefined>(() => (usable ? cachedVocabulary(vocabId!) : undefined));
+  const lang = currentLang();
+  const [ai, setAi] = useState<VocabDetail | undefined>(() => (usable ? cachedVocabulary(vocabId!, lang) : undefined));
   const [loading, setLoading] = useState(false);
   useEffect(() => {
     if (!usable) { setAi(undefined); return; }
     let alive = true;
-    setAi(cachedVocabulary(vocabId!));
+    setAi(cachedVocabulary(vocabId!, lang));
     setLoading(true);
-    fetchVocabulary(vocabId!)
+    fetchVocabulary(vocabId!, lang)
       .then((v) => { if (alive) setAi(v); })
       .catch((e) => console.warn('[vocabulary] AI 단어 설명을 불러오지 못했어요', e))
       .finally(() => { if (alive) setLoading(false); });
     return () => { alive = false; };
-  }, [vocabId, usable]);
+  }, [vocabId, usable, lang]);
   return { ai, loading: loading && !ai };
 }
 
@@ -61,7 +62,8 @@ export function WordDetailPage() {
   } : { ...base, vi: tr ?? '', nuanceVi: nuanceTr(base, lang) ?? '' };
   const aiSimilar = ai?.similarExpressions ?? [];
   const book = bookById(q.get('book') ?? undefined) ?? BOOKS.find((b) => b.wordIds.includes(w.id));
-  const scene = sceneFor(w, book);
+  // 그림책 속 문장: 서버 예문이 있으면 그것을 쓴다 (서버가 읽어 주기 음성을 미리 만들어 두는 문장)
+  const scene = ai?.sourceSentence?.ko || sceneFor(w, book);
   const wordLoading = useSpeechLoading(w.text);
   const sceneLoading = useSpeechLoading(scene);
   // 단어를 열어 본 것도 학습 기록으로 남긴다 (홈의 '최근 학습한 단어')

@@ -3,6 +3,25 @@ import { AnimWord, Icon, PageTitle, TabBar } from '../../components/ui';
 import { WORDS } from '../../data/content';
 import type { Profile } from '../../store/profile';
 import { timeAgo, useLearning, type LearnRecord, type Stage } from '../../store/learning';
+import { useEffect, useState } from 'react';
+import { fetchRecentVocabulary } from '../../api/ai';
+import { localWordForVocab } from '../../data/scanned';
+
+const SERVER_STAGE: Record<string, Stage> = { VIEWED: 'viewed', SENTENCE_DONE: 'practiced', CONVERSATION_DONE: 'talked' };
+const ORDER: Stage[] = ['viewed', 'practiced', 'talking', 'talked'];
+
+/** 같은 단어는 더 많이 진행한 단계·더 최근 시각으로 합치고 최근 순으로 정렬 */
+function mergeRecords(a: LearnRecord[], b: LearnRecord[]): LearnRecord[] {
+  const byWord = new Map<string, LearnRecord>();
+  for (const r of [...a, ...b]) {
+    const prev = byWord.get(r.wordId);
+    if (!prev) { byWord.set(r.wordId, r); continue; }
+    const newer = r.at > prev.at ? r : prev;
+    const stage = ORDER.indexOf(r.stage) > ORDER.indexOf(prev.stage) ? r.stage : prev.stage;
+    byWord.set(r.wordId, { ...newer, stage });
+  }
+  return [...byWord.values()].sort((x, y) => y.at - x.at);
+}
 
 const Sparkle = ({ size, color, style }: { size: number; color: string; style: React.CSSProperties }) => (
   <svg width={size} height={size} viewBox="0 0 24 24" aria-hidden="true" style={{ position: 'absolute', ...style }}>
@@ -26,7 +45,22 @@ const NEXT: Record<Stage, { pill: string; path: (id: string) => string }> = {
 
 export function HomePage({ profile }: { profile: Profile }) {
   // 실제로 학습한 기록만 보여 준다 (지워진 단어·책은 건너뜀)
-  const records = useLearning().filter((r) => WORDS[r.wordId]);
+  const local = useLearning();
+  const [server, setServer] = useState<LearnRecord[]>([]);
+  useEffect(() => {
+    let alive = true;
+    fetchRecentVocabulary(10).then((list) => {
+      if (!alive) return;
+      const mapped: LearnRecord[] = [];
+      for (const v of list) {
+        const w = localWordForVocab(v.vocabularyId); // 이 기기에서 보여 줄 수 있는 단어만
+        if (w) mapped.push({ wordId: w.wordId, bookId: w.bookId, stage: SERVER_STAGE[v.stage] ?? 'viewed', at: Date.parse(v.lastStudiedAt) || 0 });
+      }
+      setServer(mapped);
+    }).catch((e) => console.warn('[recent-vocabulary] 서버 학습 기록을 불러오지 못했어요', e));
+    return () => { alive = false; };
+  }, [profile.childId]);
+  const records = mergeRecords(local, server).filter((r) => WORDS[r.wordId]);
   const bookQs = (r: LearnRecord) => (r.bookId ? `?book=${r.bookId}` : '');
   const last = records[0];
   const recent = records.slice(0, 8);

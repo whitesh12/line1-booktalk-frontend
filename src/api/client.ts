@@ -281,6 +281,7 @@ export async function syncChildLanguage(p: Profile): Promise<void> {
 
 export interface PageAnalysis {
   pageId: string;
+  bookId: string;
   pageLabel: string | null;
   expressions: ScanExpression[];
 }
@@ -319,7 +320,7 @@ export async function analyzePhoto(file: File, childId: string, signal: AbortSig
   }
   const result = await request<{ pageId: string; expressions: ScanExpression[] }>(
     `/books/pages/${page.pageId}/analysis`, { signal });
-  return { pageId: result.pageId, pageLabel: page.pageLabel, expressions: result.expressions ?? [] };
+  return { pageId: result.pageId, bookId: page.bookId, pageLabel: page.pageLabel, expressions: result.expressions ?? [] };
 }
 
 function abortableWait(ms: number, signal: AbortSignal) {

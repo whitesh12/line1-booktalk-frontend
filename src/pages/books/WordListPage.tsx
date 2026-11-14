@@ -3,7 +3,8 @@ import { useParams } from 'react-router-dom';
 import { GoLink } from '../../lib/nav';
 import { AnimWord, Header, Icon, TabBar, TypeTag, speak, useSpeechLoading } from '../../components/ui';
 import { BOOKS, WORDS, bookById } from '../../data/content';
-import { isScanBook, renameScanBook, scanLanguage } from '../../data/scanned';
+import { isScanBook, renameScanBook, scanLanguage, scanServerBookId } from '../../data/scanned';
+import { renameServerBook } from '../../api/ai';
 import { currentLang, langOf, shortMeaningTr } from '../../data/translations';
 
 const LANG_NAME = { vi: '베트남어', zh: '중국어', en: '영어' } as const;
@@ -32,7 +33,12 @@ export function WordListPage() {
   useEffect(() => { setTitle(book.title); setEditing(false); }, [book.id, book.title]);
   useEffect(() => { if (editing) inputRef.current?.select(); }, [editing]);
   const save = () => {
-    if (renameScanBook(book.id, draft)) setTitle(draft.trim().slice(0, 30));
+    const t = draft.trim().slice(0, 30);
+    if (renameScanBook(book.id, t)) {
+      setTitle(t);
+      const serverId = scanServerBookId(book.id);
+      if (serverId) renameServerBook(serverId, t).catch((e) => console.warn('[books] 서버에 책 이름 저장 실패 (이 기기에는 저장됨)', e));
+    }
     setEditing(false);
   };
   // 찍은 페이지가 예전 설명 언어로 분석된 경우 (번역은 분석할 때의 언어로 만들어진다)

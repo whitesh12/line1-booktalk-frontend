@@ -16,6 +16,7 @@ interface ScanBook {
   id: string; // 'scan'(예전 1권짜리 기록) 또는 'scan-…'
   title: string;
   pageId: string;
+  serverBookId?: string; // 서버의 책 id (이름 수정 PATCH 용)
   pageLabel: string | null;
   createdAt: number;
   expressions: ScanExpression[];
@@ -147,19 +148,30 @@ function applyAll() {
 }
 
 /** 새로 찍은 페이지를 한 권으로 저장하고 그 책 id 를 돌려준다. 이름은 '내가 찍은 그림책 2' 처럼 번호를 붙인다. */
-export function saveScan(r: { pageId: string; pageLabel: string | null; expressions: ScanExpression[] }): string {
+export function saveScan(r: { pageId: string; bookId?: string; pageLabel: string | null; expressions: ScanExpression[] }): string {
   const used = new Set(scans.map((s) => s.title));
   let n = scans.length + 1;
   let title = n === 1 ? DEFAULT_SCAN_TITLE : `${DEFAULT_SCAN_TITLE} ${n}`;
   while (used.has(title)) title = `${DEFAULT_SCAN_TITLE} ${++n}`;
-  const book: ScanBook = { id: `scan-${Date.now().toString(36)}`, title, pageId: r.pageId, pageLabel: r.pageLabel, createdAt: Date.now(), expressions: r.expressions };
+  const book: ScanBook = { id: `scan-${Date.now().toString(36)}`, title, pageId: r.pageId, serverBookId: r.bookId, pageLabel: r.pageLabel, createdAt: Date.now(), expressions: r.expressions };
   scans = [book, ...scans].slice(0, MAX_BOOKS);
   persist();
   applyAll();
   return book.id;
 }
 
-/** 찍은 책 이름 바꾸기 (이 기기에 저장. 서버에는 책 이름을 바꾸는 API 가 아직 없다) */
+/** 서버의 책 id (이름 수정을 서버에도 저장할 때) */
+export const scanServerBookId = (id: string) => scans.find((s) => s.id === id)?.serverBookId;
+
+/** 서버 표현 id → 화면 단어·책 (서버의 '최근 학습한 단어'를 홈에 보여 줄 때) */
+export function localWordForVocab(vocabularyId: string): { wordId: string; bookId: string } | undefined {
+  for (const [bookId, m] of [...Object.entries(scanIds), ...Object.entries(demoIds)]) {
+    for (const [wordId, id] of Object.entries(m)) if (id === vocabularyId) return { wordId, bookId };
+  }
+  return undefined;
+}
+
+/** 찍은 책 이름 바꾸기 (이 기기에 저장하고, 화면에서 서버에도 저장한다) */
 export function renameScanBook(id: string, title: string): boolean {
   const t = title.trim().slice(0, 30);
   const s = scans.find((x) => x.id === id);

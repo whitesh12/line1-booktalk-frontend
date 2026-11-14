@@ -128,7 +128,7 @@ export function TalkChatPage({ profile, onSave }: { profile: Profile; onSave: (p
           setNotice('AI 대화 연결이 끊겼어요. 잠시 후 다시 시도해 주세요.');
         }
       } else {
-        setNotice('메시지를 보내지 못했어요. 다시 보내 주세요.');
+        setNotice(e instanceof ApiError && e.status === 503 ? 'AI가 잠시 응답하지 않아요. 다시 보내 주세요.' : '메시지를 보내지 못했어요. 다시 보내 주세요.');
       }
       setWaiting(false);
       return;
