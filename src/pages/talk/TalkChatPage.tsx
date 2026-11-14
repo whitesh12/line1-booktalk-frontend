@@ -60,7 +60,7 @@ export function TalkChatPage({ profile, onSave }: { profile: Profile; onSave: (p
   const end = useRef<HTMLDivElement>(null);
   const stem = w.text.split(' ')[0];
   // 마이크로 입력: 말한 내용을 입력칸에 넣는다 (보내기는 직접 누른다)
-  const voice = useVoiceInput((said) => setText((prev) => (prev.trim() ? `${prev.trim()} ${said}` : said)));
+  const voice = useVoiceInput((said) => setText((prev) => (prev.trim() ? `${prev.trim()} ${said}` : said)), w.text);
 
   useEffect(() => { end.current?.scrollIntoView({ behavior: 'smooth' }); }, [msgs, waiting]);
 

@@ -165,6 +165,8 @@ export interface SentenceFeedback {
   goodPoint?: string;
   explain?: string;
   tips: string[];
+  /** 마이크로 말해서 입력한 문장인지 (잘못 알아들었을 수 있음) */
+  fromVoice?: boolean;
 }
 
 export function mockSentenceFeedback(word: Word, sentence: string): SentenceFeedback {
@@ -203,7 +205,7 @@ const RULE_FALLBACK = /^local-rule/;
  * - 서버를 쓰는 모드에서는 서버(AI) 판정만 쓴다. 요청이 실패하면 오류를 던져서 화면에서 '다시 시도'를 보여 준다.
  *   (예전처럼 예시 판정으로 대신하면, 뜻이 틀린 문장도 '자연스러워요'로 통과되는 문제가 있었다)
  */
-export async function checkSentence(word: Word, sentence: string, childId?: string, vocabularyId?: string): Promise<SentenceFeedback> {
+export async function checkSentence(word: Word, sentence: string, childId?: string, vocabularyId?: string, inputMethod: 'KEYBOARD' | 'SPEECH' = 'KEYBOARD'): Promise<SentenceFeedback> {
   if (USE_MOCK) {
     await wait(1400);
     return mockSentenceFeedback(word, sentence);
@@ -215,7 +217,7 @@ export async function checkSentence(word: Word, sentence: string, childId?: stri
     originalSentence: string; suggestedSentence: string; feedback: string; highlights: { text: string }[]; promptVersion?: string }>(
     `/children/${childId}/sentence-practices`,
     // 문장 연습의 inputMethod 는 KEYBOARD | SPEECH (명세서의 TEXT 는 대화 메시지용)
-    { method: 'POST', body: JSON.stringify({ vocabularyId, sentence, inputMethod: 'KEYBOARD' }) },
+    { method: 'POST', body: JSON.stringify({ vocabularyId, sentence, inputMethod }) },
   );
   const kind: FeedbackKind = !r.targetWordUsed ? 'missing' : !r.meaningDelivered ? 'meaning'
     : r.suggestedSentence && r.suggestedSentence !== r.originalSentence ? 'polish' : 'natural';

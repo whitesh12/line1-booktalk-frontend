@@ -240,13 +240,15 @@ export async function fetchRecentVocabulary(limit = 10): Promise<RecentVocab[]> 
 /* ───────────── 음성 인식 (POST /speech/transcriptions) ───────────── */
 
 /** 녹음한 말을 글자로 바꾼다. multipart: audio(녹음 파일), language, childId */
-export async function transcribe(audio: Blob): Promise<string> {
+export async function transcribe(audio: Blob, hint?: string): Promise<string> {
   const childId = loadProfile().childId;
   if (USE_MOCK || !hasToken() || !childId) throw new ApiError(401, 'NOT_READY', '말로 입력하려면 서버 연결이 필요해요. 잠시 후 다시 시도해 주세요.');
   const form = new FormData();
   form.append('audio', audio, `voice.${audioExt(audio.type)}`);
   form.append('language', 'ko');
   form.append('childId', childId);
+  // 연습하는 단어를 알려 주면 '킁킁' 같은 흉내말을 덜 틀린다 (서버가 hint 를 지원하면 반영됨)
+  if (hint) form.append('hint', hint);
   let r = await request<{ id: string; status: string; text?: string | null }>('/speech/transcriptions', { method: 'POST', body: form });
   // 바로 끝나지 않으면 잠깐씩 다시 확인한다 (최대 약 15초)
   for (let i = 0; i < 15 && r.status !== 'COMPLETED' && r.status !== 'FAILED'; i++) {

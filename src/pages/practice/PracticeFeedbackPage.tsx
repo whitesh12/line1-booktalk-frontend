@@ -1,5 +1,5 @@
 import { Navigate, useLocation } from 'react-router-dom';
-import { Header, Highlight, Icon, TabBar } from '../../components/ui';
+import { Header, Highlight, Icon, TabBar, josa } from '../../components/ui';
 import { GoLink } from '../../lib/nav';
 import { mockSentenceFeedback, type SentenceFeedback } from '../../api/client';
 import { meaningTr } from '../../data/translations';
@@ -47,19 +47,26 @@ export function PracticeFeedbackPage() {
   }
 
   const meaning = fb.kind === 'meaning';
+  const missing = fb.kind === 'missing';
+  const voice = !!fb.fromVoice;
   return (
     <div className="screen">
       <Header title="AI 피드백" to={`/words/${w.id}/practice${qs}`} />
       <div className="content" style={{ gap: meaning ? 12 : 14, paddingBottom: 16 }}>
-        <div className={`banner${meaning ? ' coral' : ''}`}>
-          <span className="dot">{meaning ? Icon.search() : Icon.check()}</span>
+        <div className={`banner${meaning || missing ? ' coral' : ''}`}>
+          <span className="dot">{meaning || missing ? Icon.search() : Icon.check()}</span>
           <span>{meaning ? <>조금 헷갈렸어요.<br />‘{w.text}’의 뜻을 같이 살펴볼까요?</>
-            : fb.kind === 'missing' ? <>좋은 문장이에요!<br />목표 표현을 넣어 볼까요?</>
+            : missing ? <>‘{w.text}’{josa(w.text, '이', '가')} 문장에 없어요.<br />‘{w.text}’{josa(w.text, '을', '를')} 넣어서 다시 {voice ? '말해' : '써'} 볼까요?</>
             : <>의미는 잘 전달됐어요!<br />표현 하나만 다듬어 볼까요?</>}</span>
         </div>
         <div className="card" style={cardPad}>
-          <p className="card-label">내 문장</p>
+          <p className="card-label">{voice ? '말한 내용 (이렇게 알아들었어요)' : '내 문장'}</p>
           <p style={{ margin: 0, fontSize: 18, lineHeight: 1.7 }}>{mySentence('wavy')}</p>
+          {voice && missing && (
+            <p style={{ margin: '10px 0 0', paddingTop: 10, borderTop: '1px solid #EEF0F4', fontSize: 13.5, lineHeight: 1.55, color: 'var(--text-body)' }}>
+              ‘{w.text}’{josa(w.text, '을', '를')} 말했는데 다르게 알아들었다면, 또박또박 천천히 다시 말하거나 글로 고쳐 써 주세요.
+            </p>
+          )}
           {fb.goodPoint && (
             <div style={{ display: 'flex', alignItems: 'flex-start', gap: 8, marginTop: 10, paddingTop: 10, borderTop: '1px solid #EEF0F4' }}>
               <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#1C7A6C" strokeWidth={2.6} strokeLinecap="round" strokeLinejoin="round" aria-hidden="true" style={{ flex: 'none', marginTop: 2 }}><path d="M5 12.5l4.5 4.5L19 7.5" /></svg>
@@ -67,7 +74,7 @@ export function PracticeFeedbackPage() {
             </div>
           )}
         </div>
-        {meaning && (
+        {(meaning || missing) && (
           <div className="card selected" style={{ ...cardPad, display: 'flex', flexDirection: 'column', gap: 6 }}>
             <p className="card-label teal" style={{ margin: 0 }}>‘{w.text}’은 이런 뜻이에요</p>
             <p style={{ margin: 0, fontSize: 16, fontWeight: 700, lineHeight: 1.55 }}>{w.meaning}</p>
@@ -79,13 +86,23 @@ export function PracticeFeedbackPage() {
           <div className="card selected" style={cardPad}><p className="card-label teal">이렇게 말해 보세요</p><p style={{ margin: 0, fontSize: 18, lineHeight: 1.7 }}><Highlight sentence={fb.suggested} word={w.text} /></p></div>
         )}
         <div className="hint" style={{ gap: 8 }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>{Icon.bulb()}<b style={{ fontSize: 16 }}>{meaning ? '힌트' : '이 부분만 살짝'}</b></div>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>{Icon.bulb()}<b style={{ fontSize: 16 }}>{meaning || missing ? '힌트' : '이 부분만 살짝'}</b></div>
           {fb.tips.map((t) => <p key={t}>{t}</p>)}
         </div>
       </div>
       <div className="bottom-bar sticky">
-        {meaning && <GoLink to={`/words/${w.id}${qs}`} className="btn btn-outline" style={{ fontSize: 16 }}>뜻 다시 보기</GoLink>}
-        <GoLink to={`/words/${w.id}/practice${qs}`} onClick={() => setDraft(w.id, fb.original)} className="btn btn-primary" style={meaning ? { fontSize: 16 } : undefined}>{Icon.pencil(meaning ? 18 : 20)}다시 써 보기</GoLink>
+        {voice && missing ? (
+          // 말로 입력했는데 목표 단어가 없으면: 다시 말하기 / 글로 고쳐 쓰기
+          <>
+            <GoLink to={`/words/${w.id}/practice${qs}`} state={{ retryVoice: true }} onClick={() => setDraft(w.id, null)} className="btn btn-outline" style={{ fontSize: 16 }}>{Icon.mic(18)}다시 말하기</GoLink>
+            <GoLink to={`/words/${w.id}/practice${qs}`} onClick={() => setDraft(w.id, fb.original)} className="btn btn-primary" style={{ fontSize: 16 }}>{Icon.pencil(18)}고쳐 쓰기</GoLink>
+          </>
+        ) : (
+          <>
+            {(meaning || missing) && <GoLink to={`/words/${w.id}${qs}`} className="btn btn-outline" style={{ fontSize: 16 }}>뜻 다시 보기</GoLink>}
+            <GoLink to={`/words/${w.id}/practice${qs}`} onClick={() => setDraft(w.id, fb.original)} className="btn btn-primary" style={meaning || missing ? { fontSize: 16 } : undefined}>{Icon.pencil(meaning || missing ? 18 : 20)}다시 써 보기</GoLink>
+          </>
+        )}
       </div>
       <TabBar />
     </div>

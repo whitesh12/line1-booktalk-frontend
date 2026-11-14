@@ -203,3 +203,17 @@ export function LevelBars({ level, color = 'currentColor' }: { level: number; co
     </span>
   );
 }
+
+/** 받침이 있으면 a, 없으면 b (예: 킁킁'이'/영차'가', 킁킁'을'/영차'를') */
+export const josa = (word: string, a: string, b: string) => {
+  const c = word.charCodeAt(word.length - 1);
+  return c >= 0xac00 && c <= 0xd7a3 && (c - 0xac00) % 28 ? a : b;
+};
+
+/** '로/으로' (받침 없거나 ㄹ 받침이면 '로') */
+export const ro = (word: string) => {
+  const c = word.charCodeAt(word.length - 1);
+  if (c < 0xac00 || c > 0xd7a3) return '(으)로';
+  const b = (c - 0xac00) % 28;
+  return b === 0 || b === 8 ? '로' : '으로';
+};

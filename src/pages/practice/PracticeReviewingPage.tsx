@@ -11,7 +11,9 @@ export function PracticeReviewingPage({ profile, onSave }: { profile: Profile; o
   const { w, qs, demo } = usePracticeWord();
   const nav = useNavigate();
   const hold = demo === 'waiting';
-  const sentence = (useLocation().state as { sentence?: string } | null)?.sentence ?? (hold ? DEMO_SENTENCE.polish : undefined);
+  const navState = useLocation().state as { sentence?: string; fromVoice?: boolean } | null;
+  const sentence = navState?.sentence ?? (hold ? DEMO_SENTENCE.polish : undefined);
+  const fromVoice = !!navState?.fromVoice;
   const [error, setError] = useState<string | null>(null);
   const [attempt, setAttempt] = useState(0); // '다시 시도'를 누르면 같은 문장으로 다시 확인
 
@@ -24,13 +26,13 @@ export function PracticeReviewingPage({ profile, onSave }: { profile: Profile; o
       : withChild(profile, (childId) => { if (alive) onSave({ ...profile, childId }); }, async (childId) => {
         let vocabularyId = serverVocabId(w.id);
         if (!vocabularyId) { await loadDemoVocab(); vocabularyId = serverVocabId(w.id); }
-        return checkSentence(w, sentence, childId, vocabularyId);
+        return checkSentence(w, sentence, childId, vocabularyId, fromVoice ? 'SPEECH' : 'KEYBOARD');
       });
     run
       .then((fb) => {
         if (!alive) return;
         trackLearning(w.id, 'practiced'); // 문장 연습을 한 번 마쳤다
-        nav(`/words/${w.id}/practice/feedback${qs}`, { replace: true, state: { fb } });
+        nav(`/words/${w.id}/practice/feedback${qs}`, { replace: true, state: { fb: { ...fb, fromVoice } } });
       })
       .catch((e) => {
         if (!alive) return;

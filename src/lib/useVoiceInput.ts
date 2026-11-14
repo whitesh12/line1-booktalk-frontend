@@ -11,7 +11,7 @@ export type VoiceState = 'idle' | 'recording' | 'transcribing';
  * 서버 음성 인식으로 글자로 바꿔 onText 로 넘긴다. 녹음 중에 다시 누르면 바로 끝낸다.
  * level(0~1)·elapsedMs 로 소리 크기 막대와 시간을 보여 줄 수 있다.
  */
-export function useVoiceInput(onText: (text: string) => void) {
+export function useVoiceInput(onText: (text: string) => void, hint?: string) {
   const [state, setState] = useState<VoiceState>('idle');
   const [level, setLevel] = useState(0);
   const [elapsedMs, setElapsedMs] = useState(0);
@@ -31,7 +31,7 @@ export function useVoiceInput(onText: (text: string) => void) {
     try {
       const recorded = await r.stop();
       if (recorded.size < 1000) { toast('말소리가 들리지 않았어요. 다시 말해 주세요.'); return; }
-      const text = await transcribe(await toWav(recorded)); // 서버가 받는 wav 로 바꿔서 보낸다
+      const text = await transcribe(await toWav(recorded), hint); // 서버가 받는 wav 로 바꿔서 보낸다
       if (!alive.current) return;
       if (text) cb.current(text); else toast('말을 알아듣지 못했어요. 조금 더 크게 다시 말해 주세요.');
     } catch (e) {
