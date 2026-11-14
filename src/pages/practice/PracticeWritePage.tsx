@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
-import { Header, Icon, TabBar } from '../../components/ui';
-import { useVoiceInput } from '../../lib/useVoiceInput';
+import { Header, Icon, LevelBars, TabBar } from '../../components/ui';
+import { formatElapsed, useVoiceInput } from '../../lib/useVoiceInput';
 import { useGo } from '../../lib/nav';
 import { LOCAL_CSS, readDraft, setDraft, usePracticeWord } from './shared';
 
@@ -30,11 +30,19 @@ export function PracticeWritePage() {
           <textarea id="sentence" className="textarea" style={{ height: 170 }} placeholder="여기에 직접 문장을 입력해 보세요" value={text} onChange={(e) => setText(e.target.value)} />
           {tooLong && <span role="alert" style={{ fontSize: 13, color: 'var(--coral)' }}>문장은 {MAX_SENTENCE}자까지 쓸 수 있어요. (지금 {text.trim().length}자)</span>}
         </div>
-        {/* 마이크로 입력: 누르면 녹음, 다시 누르면 글자로 바꿔 문장 칸에 넣는다 */}
-        <button type="button" className={`btn btn-soft${voice.state === 'recording' ? ' mic-rec' : ''}`} onClick={voice.toggle}
-          disabled={voice.state === 'transcribing'} aria-pressed={voice.state === 'recording'}>
-          {Icon.mic(18)}{voice.state === 'recording' ? '듣고 있어요 · 다 말하면 누르세요' : voice.state === 'transcribing' ? '글로 바꾸는 중…' : '마이크로 입력'}
-        </button>
+        {/* 마이크로 입력: 누르고 말하면, 말을 멈출 때 자동으로 글자로 바꿔 문장 칸에 넣는다 */}
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+          <button type="button" className={`btn btn-soft${voice.state === 'recording' ? ' mic-rec mic-live' : ''}`} onClick={voice.toggle}
+            disabled={voice.state === 'transcribing'} aria-pressed={voice.state === 'recording'}
+            aria-label={voice.state === 'recording' ? '녹음 중, 누르면 바로 끝내기' : undefined}>
+            {voice.state === 'recording' ? (
+              <>{Icon.mic(18)}듣고 있어요 <span style={{ fontVariantNumeric: 'tabular-nums' }}>{formatElapsed(voice.elapsedMs)}</span><LevelBars level={voice.level} /></>
+            ) : voice.state === 'transcribing' ? <>{Icon.mic(18)}글로 바꾸는 중…</> : <>{Icon.mic(18)}마이크로 입력</>}
+          </button>
+          <span role="status" style={{ fontSize: 12.5, color: 'var(--text-sub)', textAlign: 'center' }}>
+            {voice.state === 'recording' ? '말을 멈추면 자동으로 글로 바꿔요 · 누르면 바로 끝나요' : voice.state === 'idle' ? '누르고 말하면 글로 바꿔 드려요' : ' '}
+          </span>
+        </div>
       </div>
       <div className="bottom-bar">
         <button className="btn btn-primary" onClick={() => (text.trim() && !tooLong ? go(`/words/${w.id}/practice/reviewing${qs}`, { state: { sentence: text } }) : document.getElementById('sentence')?.focus())}>완료</button>

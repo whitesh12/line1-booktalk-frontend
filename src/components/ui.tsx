@@ -191,3 +191,15 @@ export function speak(text: string, rate = Number(loadProfile().speed) || 1) {
       browserSpeak(text, rate);
     });
 }
+
+/** 녹음 중 소리 크기 막대 (level 0~1). 말하면 막대가 커진다 */
+const BAR_SHAPE = [0.55, 0.85, 1, 0.8, 0.5];
+export function LevelBars({ level, color = 'currentColor' }: { level: number; color?: string }) {
+  return (
+    <span aria-hidden="true" style={{ display: 'inline-flex', alignItems: 'center', gap: 3, height: 18 }}>
+      {BAR_SHAPE.map((k, i) => (
+        <span key={i} style={{ width: 3, borderRadius: 2, background: color, height: `${Math.max(3, Math.round(18 * Math.min(1, level * 1.6) * k))}px`, transition: 'height .1s linear' }} />
+      ))}
+    </span>
+  );
+}

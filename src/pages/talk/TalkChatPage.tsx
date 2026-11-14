@@ -1,7 +1,8 @@
 import { useEffect, useRef, useState } from 'react';
 import { useBlocker, useSearchParams } from 'react-router-dom';
 import { Header, Icon, KidMessage, TabBar } from '../../components/ui';
-import { useVoiceInput } from '../../lib/useVoiceInput';
+import { formatElapsed, useVoiceInput } from '../../lib/useVoiceInput';
+import { LevelBars } from '../../components/ui';
 import type { Word } from '../../data/content';
 import { isIntentionalNav, useGo } from '../../lib/nav';
 import { ApiError, MAX_TURNS, USE_MOCK, childScript, openingLine, sendToChild, talkFeedbackTips, withChild } from '../../api/client';
@@ -246,6 +247,13 @@ export function TalkChatPage({ profile, onSave }: { profile: Profile; onSave: (p
         )}
         <div ref={end} />
       </div>
+      {!done && voice.state !== 'idle' && (
+        <div role="status" className="voice-strip">
+          {voice.state === 'recording' ? (
+            <><span className="rec-dot" />듣고 있어요 <b style={{ fontVariantNumeric: 'tabular-nums' }}>{formatElapsed(voice.elapsedMs)}</b><LevelBars level={voice.level} color="var(--coral)" /><span style={{ marginLeft: 'auto', color: 'var(--text-sub)' }}>말을 멈추면 자동으로 끝나요</span></>
+          ) : <>글로 바꾸는 중…</>}
+        </div>
+      )}
       {!done && (
         <form className="composer" onSubmit={(e) => { e.preventDefault(); send(); }}>
           <input id="talk-input" aria-label={retry ? '답변 다시 입력' : '답변 입력'} placeholder={waiting ? '답을 기다리는 중...' : retry ? '다시 답해 보세요' : '여기에 답해 보세요'}
@@ -253,7 +261,7 @@ export function TalkChatPage({ profile, onSave }: { profile: Profile; onSave: (p
           {!waiting && !retry && (
             <button type="button" className={`round mic${voice.state === 'recording' ? ' mic-rec' : ''}`} onClick={voice.toggle}
               disabled={voice.state === 'transcribing'} aria-pressed={voice.state === 'recording'}
-              aria-label={voice.state === 'recording' ? '녹음 멈추고 글로 바꾸기' : voice.state === 'transcribing' ? '글로 바꾸는 중' : '말로 입력'}>
+              aria-label={voice.state === 'recording' ? '녹음 바로 끝내기' : voice.state === 'transcribing' ? '글로 바꾸는 중' : '말로 입력'}>
               {voice.state === 'transcribing' ? <span className="typing" style={{ transform: 'scale(.6)' }}><i /><i /><i /></span> : Icon.mic()}
             </button>
           )}

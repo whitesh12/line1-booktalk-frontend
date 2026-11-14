@@ -19,14 +19,32 @@ export interface Recording {
   cancel: () => void;
 }
 
-export async function startRecording(onAutoStop?: () => void): Promise<Recording> {
+/** 자동으로 멈춘 이유: 말을 마침(조용해짐) / 말소리가 없음 / 최대 시간 */
+export type AutoStopReason = 'silence' | 'no-speech' | 'max';
+
+export interface RecordOptions {
+  /** 소리 크기(0~1)와 녹음한 시간(ms). 약 0.1초마다 */
+  onLevel?: (level: number, elapsedMs: number) => void;
+  /** 저절로 멈췄을 때 */
+  onAutoStop?: (reason: AutoStopReason) => void;
+}
+
+const SILENCE_MS = 1500; // 말을 시작한 뒤 이만큼 조용하면 말을 마친 것으로 본다
+const NO_SPEECH_MS = 8000; // 처음부터 이만큼 아무 말이 없으면 멈춘다
+
+export async function startRecording(opts: RecordOptions = {}): Promise<Recording> {
   if (!navigator.mediaDevices?.getUserMedia || typeof MediaRecorder === 'undefined') {
     throw new MicError('UNSUPPORTED', '이 브라우저에서는 마이크 입력을 쓸 수 없어요. 글로 입력해 주세요.');
   }
+  // 아이폰은 '누른 순간'에 만든 오디오만 동작해서, 마이크 권한을 묻기 전에 먼저 만들어 둔다
+  const AC = (window as unknown as { AudioContext?: typeof AudioContext; webkitAudioContext?: typeof AudioContext });
+  const Ctx = AC.AudioContext ?? AC.webkitAudioContext;
+  const meterCtx = Ctx ? new Ctx() : null;
   let stream: MediaStream;
   try {
     stream = await navigator.mediaDevices.getUserMedia({ audio: { echoCancellation: true, noiseSuppression: true } });
   } catch (e) {
+    meterCtx?.close?.().catch(() => {});
     const name = (e as DOMException)?.name;
     if (name === 'NotAllowedError' || name === 'SecurityError') throw new MicError('DENIED', '마이크 권한을 허용하면 말로 입력할 수 있어요.');
     throw new MicError('NO_MIC', '마이크를 찾지 못했어요. 글로 입력해 주세요.');
@@ -35,15 +53,53 @@ export async function startRecording(onAutoStop?: () => void): Promise<Recording
   const rec = new MediaRecorder(stream, mimeType ? { mimeType } : undefined);
   const chunks: Blob[] = [];
   rec.ondataavailable = (e) => { if (e.data.size) chunks.push(e.data); };
-  const release = () => stream.getTracks().forEach((t) => t.stop());
+  let meter: ReturnType<typeof setInterval> | undefined;
+  const release = () => {
+    clearInterval(meter);
+    stream.getTracks().forEach((t) => t.stop());
+    meterCtx?.close?.().catch(() => {});
+  };
   const done = new Promise<Blob>((resolve) => {
     rec.onstop = () => { release(); resolve(new Blob(chunks, { type: rec.mimeType || mimeType || 'audio/webm' })); };
   });
   rec.start();
-  const timer = setTimeout(() => { if (rec.state === 'recording') { rec.stop(); onAutoStop?.(); } }, MAX_RECORD_MS);
+  const started = Date.now();
+  const autoStop = (reason: AutoStopReason) => { if (rec.state === 'recording') { rec.stop(); opts.onAutoStop?.(reason); } };
+
+  // 소리 크기 재기 → 화면 막대 + 말을 멈추면 자동으로 끝내기
+  if (meterCtx) {
+    meterCtx.resume?.().catch(() => {});
+    const analyser = meterCtx.createAnalyser();
+    analyser.fftSize = 1024;
+    meterCtx.createMediaStreamSource(stream).connect(analyser);
+    const buf = new Float32Array(analyser.fftSize);
+    let floor = 0; // 주변 소음 크기 (처음 0.4초로 잰다)
+    let floorSamples = 0;
+    let spoke = false;
+    let lastLoud = started;
+    meter = setInterval(() => {
+      const now = Date.now();
+      const elapsed = now - started;
+      analyser.getFloatTimeDomainData(buf);
+      let sum = 0;
+      for (let i = 0; i < buf.length; i++) sum += buf[i] * buf[i];
+      const rms = Math.sqrt(sum / buf.length);
+      if (elapsed < 400) { floor = (floor * floorSamples + rms) / ++floorSamples; }
+      const threshold = Math.max(0.015, floor * 2.5); // 주변보다 확실히 큰 소리를 '말'로 본다
+      if (rms > threshold) { spoke = true; lastLoud = now; }
+      opts.onLevel?.(Math.min(1, rms * 6), elapsed);
+      if (spoke && now - lastLoud > SILENCE_MS) autoStop('silence');
+      else if (!spoke && elapsed > NO_SPEECH_MS) autoStop('no-speech');
+      else if (elapsed > MAX_RECORD_MS) autoStop('max');
+    }, 100);
+  } else {
+    // 소리 크기를 잴 수 없는 브라우저: 최대 시간만
+    const t = setTimeout(() => autoStop('max'), MAX_RECORD_MS);
+    meter = t as unknown as ReturnType<typeof setInterval>;
+  }
   return {
-    stop: () => { clearTimeout(timer); if (rec.state === 'recording') rec.stop(); return done; },
-    cancel: () => { clearTimeout(timer); rec.ondataavailable = null; if (rec.state === 'recording') rec.stop(); release(); },
+    stop: () => { clearInterval(meter); if (rec.state === 'recording') rec.stop(); return done; },
+    cancel: () => { rec.ondataavailable = null; if (rec.state === 'recording') rec.stop(); release(); },
   };
 }
 
