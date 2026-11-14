@@ -1,5 +1,5 @@
 import { GoLink } from '../../lib/nav';
-import { Header, Icon, TabBar, callName } from '../../components/ui';
+import { Header, Icon, TabBar, callName, josa } from '../../components/ui';
 import type { Profile } from '../../store/profile';
 import { useTalk } from './shared';
 
@@ -20,7 +20,7 @@ export function TalkIntroPage({ profile }: { profile: Profile }) {
         <h2 style={{ margin: '6px 0 0', fontSize: 17, fontWeight: 700 }}>오늘의 목표</h2>
         <div style={{ background: '#fff', border: '2px dashed var(--mint)', borderRadius: 22, padding: '22px 20px', display: 'flex', flexDirection: 'column', gap: 12 }}>
           <span className="chip chip-primary" style={{ alignSelf: 'flex-start', fontSize: 17, fontWeight: 800, letterSpacing: '-0.02em', padding: '5px 14px' }}>{w.text}</span>
-          <p style={{ margin: 0, fontSize: 18, fontWeight: 700, lineHeight: 1.5 }}>을(를) 넣어 아이에게 질문해 보기</p>
+          <p style={{ margin: 0, fontSize: 18, fontWeight: 700, lineHeight: 1.5 }}>{josa(w.text, '을', '를')} 넣어 아이에게 질문해 보기</p>
         </div>
       </div>
       <div className="bottom-bar"><GoLink to={`/words/${w.id}/talk/chat${qs}`} className="btn btn-primary">{Icon.chat()}대화 시작하기</GoLink></div>

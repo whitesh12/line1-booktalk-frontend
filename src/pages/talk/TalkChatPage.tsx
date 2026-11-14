@@ -225,8 +225,8 @@ export function TalkChatPage({ profile, onSave }: { profile: Profile; onSave: (p
             <p key={i} style={{ margin: '-4px 0 0', alignSelf: 'flex-end', maxWidth: '85%', fontSize: 13, lineHeight: 1.5, color: 'var(--primary)', textAlign: 'right' }}>{Icon.check(12, '#1C7A6C')} {m.text}</p>
           ) : (
             <div key={i} style={{ display: 'flex', flexDirection: 'column', gap: 12, marginTop: 6 }}>
-              <div className="banner" style={{ gap: 10, borderRadius: 16, padding: '12px 14px', fontSize: 14 }}><span className="dot" style={{ width: 30, height: 30, ...(m.retry ? { background: 'var(--coral)' } : {}) }}>{m.retry ? Icon.bulb(16) : Icon.check(16)}</span>{m.title ?? '의미는 잘 전달됐어요! 표현 하나만 다듬어 볼까요?'}</div>
-              <div className="hint" style={{ borderRadius: 18, padding: '14px 16px' }}><b style={{ fontSize: 15 }}>이 부분만 살짝</b>{m.tips.map((t) => <p key={t} style={{ fontSize: 14, lineHeight: 1.55 }}>{t}</p>)}</div>
+              <div className={`banner${m.retry ? ' coral' : ''}`} style={{ gap: 10, borderRadius: 16, padding: '12px 14px', fontSize: 14 }}><span className="dot" style={{ width: 30, height: 30, ...(m.retry ? { background: 'var(--coral)' } : {}) }}>{m.retry ? Icon.bulb(16) : Icon.check(16)}</span>{m.title ?? '의미는 잘 전달됐어요! 표현 하나만 다듬어 볼까요?'}</div>
+              <div className="hint" style={{ borderRadius: 18, padding: '14px 16px' }}><b style={{ fontSize: 15 }}>{m.retry ? '힌트' : '이 부분만 살짝'}</b>{m.tips.map((t) => <p key={t} style={{ fontSize: 14, lineHeight: 1.55 }}>{t}</p>)}</div>
             </div>
           ),
         )}
