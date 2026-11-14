@@ -197,10 +197,12 @@ export function speak(text: string, rate = Number(loadProfile().speed) || 1) {
   Promise.race([synthesize(text), timeout])
     .then((url) => play(url)?.catch((err) => {
       // 저장해 둔 주소의 파일이 서버에서 없어졌으면(재배포 등) 저장을 지우고 한 번만 새로 받아 재생한다
-      if (!wasCached || seq !== speakSeq) throw err;
+      const missing = (err as DOMException)?.name === 'NotSupportedError' || audio.error?.code === 4; // 4: MEDIA_ERR_SRC_NOT_SUPPORTED
+      if (!wasCached || !missing || seq !== speakSeq) throw err;
       forgetSpeech(text);
       setLoading(text);
-      return Promise.race([synthesize(text), timeout]).then((u) => play(u));
+      const again = new Promise<never>((_, reject) => setTimeout(() => reject(new Error('TTS_TIMEOUT')), TTS_MAX_WAIT_MS));
+      return Promise.race([synthesize(text), again]).then((u) => play(u));
     }))
     .catch((e) => {
       if (seq !== speakSeq) return;

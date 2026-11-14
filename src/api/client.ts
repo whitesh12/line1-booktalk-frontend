@@ -333,30 +333,60 @@ function throwIfFailed(j: JobState) {
   }
 }
 
-/** 올린 페이지 분석 시작 → 상태 폴링 → 결과 조회 (명세서 9장). force 는 같은 페이지를 다시 분석할 때 */
-export async function analyzePage(page: UploadedPage, signal: AbortSignal, force = false,
-  onProgress?: (percent: number) => void): Promise<PageAnalysis> {
+/** 분석 작업이 서버에서 실패로 끝났는지 (같은 페이지로는 다시 분석할 수 없어서 사진을 새로 올려야 한다) */
+export const isJobFailure = (e: unknown) => e instanceof ApiError && e.status === 422;
+
+/**
+ * 올린 페이지 분석 시작 → 상태 폴링 → 결과 조회 (명세서 9장).
+ * 서버는 같은 페이지에 분석을 다시 요청하면 거부한다 (분석 중: 409 ANALYSIS_ALREADY_RUNNING, 끝남: 400 INVALID_STATE).
+ * 그래서 '다시 시도'일 때는 새로 요청하지 않고, 하던 분석(jobId)을 이어서 기다리거나 이미 끝난 결과를 받아 온다.
+ */
+export async function analyzePage(page: UploadedPage, signal: AbortSignal, jobId?: string,
+  onJob?: (jobId: string) => void, onProgress?: (percent: number) => void): Promise<PageAnalysis> {
   const { childId } = page;
-  const job = await request<JobState & { jobId: string }>(
-    `/books/pages/${page.pageId}/analysis-jobs`,
-    { method: 'POST', body: JSON.stringify({ childId, force, features: ['OCR', 'EXPRESSIONS'] }), signal });
+  const fetchResult = async () => {
+    const result = await request<{ pageId: string; expressions: ScanExpression[] }>(`/books/pages/${page.pageId}/analysis`, { signal });
+    return { pageId: result.pageId ?? page.pageId, bookId: page.bookId, pageLabel: page.pageLabel, expressions: result.expressions ?? [] };
+  };
+  const deadline = Date.now() + 90_000; // 무한 폴링 방지
+  const timeout = () => new ApiError(408, 'ANALYSIS_TIMEOUT', '분석이 오래 걸리고 있어요. 다시 시도해 주세요.', true);
+
+  let job: JobState;
+  if (jobId) {
+    job = await request<JobState>(`/analysis-jobs/${jobId}`, { signal }); // 하던 분석 이어서
+  } else {
+    try {
+      const j = await request<JobState & { jobId: string }>(`/books/pages/${page.pageId}/analysis-jobs`,
+        { method: 'POST', body: JSON.stringify({ childId, force: false, features: ['OCR', 'EXPRESSIONS'] }), signal });
+      jobId = j.jobId;
+      onJob?.(j.jobId);
+      job = j;
+    } catch (e) {
+      // 앞선 요청이 서버에는 도착했는데 응답만 못 받은 경우: 이미 끝났으면 결과를 받고, 분석 중이면 결과가 나올 때까지 기다린다
+      if (!(e instanceof ApiError) || !['INVALID_STATE', 'ANALYSIS_ALREADY_RUNNING'].includes(e.code)) throw e;
+      while (true) {
+        try { return await fetchResult(); } catch (err) {
+          if (!(err instanceof ApiError) || err.status >= 500 || err.status === 0) throw err;
+        }
+        if (Date.now() > deadline) throw timeout();
+        await abortableWait(1500, signal);
+      }
+    }
+  }
   throwIfFailed(job); // 시작하자마자 실패로 오는 경우 (글자 없음 등)
 
   let status = job.status;
   let delay = job.pollAfterMs || 1000;
-  const deadline = Date.now() + 90_000; // 무한 폴링 방지
   while (status === 'QUEUED' || status === 'RUNNING') {
-    if (Date.now() > deadline) throw new ApiError(408, 'ANALYSIS_TIMEOUT', '분석이 오래 걸리고 있어요. 다시 시도해 주세요.', true);
+    if (Date.now() > deadline) throw timeout();
     await abortableWait(delay, signal);
-    const j = await request<JobState>(`/analysis-jobs/${job.jobId}`, { signal });
+    const j = await request<JobState>(`/analysis-jobs/${jobId}`, { signal });
     status = j.status;
     delay = j.pollAfterMs || 1000;
     if (j.progress != null) onProgress?.(j.progress);
     throwIfFailed(j);
   }
-  const result = await request<{ pageId: string; expressions: ScanExpression[] }>(
-    `/books/pages/${page.pageId}/analysis`, { signal });
-  return { pageId: result.pageId, bookId: page.bookId, pageLabel: page.pageLabel, expressions: result.expressions ?? [] };
+  return fetchResult();
 }
 
 function abortableWait(ms: number, signal: AbortSignal) {
