@@ -44,19 +44,22 @@ export function ScanAnalyzingPage({ profile, onSave }: { profile: Profile; onSav
     withChild(profile, (childId) => { if (!ctrl.signal.aborted) onSave({ ...profile, childId }); }, run)
       .then((r) => {
         if (ctrl.signal.aborted) return;
-        if (r.expressions.length === 0) { setError({ message: '이 페이지에서는 배울 표현을 찾지 못했어요. 다른 페이지를 찍어 볼까요?', retry: false }); return; }
+        // 분석은 됐는데 배울 표현이 없음 → '실패'가 아니라 다른 페이지를 안내하는 화면으로
+        if (r.expressions.length === 0) { setPendingPhoto(null); nav('/scan/empty?reason=no-expressions', { replace: true }); return; }
         setPendingPhoto(null);
         const bookId = saveScan(r); // 찍을 때마다 새 책으로 저장
         go(`/books/${bookId}`);
       })
       .catch((e) => {
         if (ctrl.signal.aborted) return;
+        // 사진에서 글자를 못 읽음 → 실패가 아니라 다시 찍는 방법을 안내하는 화면으로
+        if (e instanceof ApiError && e.code === 'IMAGE_QUALITY_LOW') { setPendingPhoto(null); nav('/scan/empty?reason=no-text', { replace: true }); return; }
         // 사진 용량·형식 문제는 '분석 실패'가 아니라 사진 안내로 보여 준다
         const photoProblem = e instanceof ApiError && (e.code === 'FILE_TOO_LARGE' || e.code === 'UNSUPPORTED_MEDIA_TYPE');
         setError({
           title: photoProblem ? '사진을 다시 확인해 주세요' : undefined,
           message: e instanceof ApiError && e.code === 'FILE_TOO_LARGE' ? PHOTO_TOO_LARGE
-            : e instanceof ApiError ? e.message : '표현을 찾는 중에 문제가 생겼어요. 다시 시도해 주세요.',
+            : e instanceof ApiError ? e.message : '사진을 분석하는 중에 문제가 생겼어요. 다시 시도해 주세요.',
           retry: !photoProblem && isTransientAiError(e),
         });
       });
@@ -70,7 +73,7 @@ export function ScanAnalyzingPage({ profile, onSave }: { profile: Profile; onSav
       <div className="screen">
         <Header title="표현 찾기" back={false} center />
         <div className="content center" style={{ gap: 18, padding: '0 24px 80px', textAlign: 'center' }} role="alert">
-          <b style={{ fontSize: 19 }}>{error.title ?? '표현을 찾지 못했어요'}</b>
+          <b style={{ fontSize: 19 }}>{error.title ?? '사진을 분석하지 못했어요'}</b>
           <span style={{ fontSize: 15, color: 'var(--text-sub)', lineHeight: 1.55 }}>{error.message}</span>
           {error.retry && (
             <button className="btn btn-primary" style={{ marginTop: 8 }} onClick={() => { setError(null); setAttempt((n) => n + 1); }}>같은 사진으로 다시 시도</button>

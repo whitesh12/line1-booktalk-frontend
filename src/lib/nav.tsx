@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { BOOKS, bookById } from '../data/content';
 
 const TABS = ['/home', '/books', '/settings'];
-const FREE = ['/scan', '/scan/analyzing'];
+const FREE = ['/scan', '/scan/analyzing', '/scan/empty'];
 const STACK_KEY = 'booktalk.navStack';
 
 const pathOf = (url: string) => url.split('?')[0];

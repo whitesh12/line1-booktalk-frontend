@@ -11,6 +11,7 @@ import { BookListPage } from './pages/books/BookListPage';
 import { WordListPage } from './pages/books/WordListPage';
 import { ScanPage } from './pages/scan/ScanPage';
 import { ScanAnalyzingPage } from './pages/scan/ScanAnalyzingPage';
+import { ScanEmptyPage } from './pages/scan/ScanEmptyPage';
 import { WordDetailPage } from './pages/word/WordDetailPage';
 import { PracticeWritePage } from './pages/practice/PracticeWritePage';
 import { PracticeReviewingPage } from './pages/practice/PracticeReviewingPage';
@@ -48,6 +49,7 @@ export default function App() {
         <Route path="/books" element={<BookListPage />} />
         <Route path="/books/:bookId" element={<WordListPage />} />
         <Route path="/scan" element={<ScanPage />} />
+        <Route path="/scan/empty" element={<ScanEmptyPage />} />
         <Route path="/scan/analyzing" element={<ScanAnalyzingPage profile={profile} onSave={setProfile} />} />
         <Route path="/words/:wordId" element={<WordDetailPage />} />
         <Route path="/words/:wordId/practice" element={<PracticeWritePage />} />
