@@ -30,7 +30,7 @@ export const isScanBook = (id?: string | null) => !!id && (id === 'scan' || id.s
 const LIST_KEY = 'booktalk.scans';
 const OLD_KEY = 'booktalk.scan'; // 예전에는 마지막 1권만 저장했다
 const MAX_BOOKS = 30;
-const TYPE: Record<string, WordType> = { MIMETIC: '의태어', ONOMATOPOEIA: '의성어', IDIOM: '관용 표현', EMOTION: '감정 표현', INTERJECTION: '감탄사' };
+const TYPE: Record<string, WordType> = { MIMETIC: '의태어', ONOMATOPOEIA: '의성어', IDIOM: '관용 표현' };
 
 /* ───────── 단어 ↔ 서버 표현 id ───────── */
 
@@ -125,7 +125,8 @@ function applyAll() {
       const local = Object.values(WORDS).find((w) => w.text === e.text && !w.id.startsWith('exp_'));
       // 번역은 단어 카드에 넣지 않고 '언어와 함께' 따로 기억한다 → 설정 언어와 같을 때만 보여 준다.
       const word: Word = local ?? {
-        id: e.id, text: e.text, type: TYPE[e.type] ?? '의태어', motion: 'wave', // 처음 보는 단어도 움직임이 보이게
+        // 모르는 종류면 태그를 숨기고(의태어로 잘못 보이지 않게), 처음 보는 단어도 움직임이 보이게
+        id: e.id, text: e.text, type: TYPE[e.type] ?? null, motion: 'wave',
         meaning: e.definition, vi: '',
         nuance: e.definition, nuanceVi: '', usage: [],
         examples: e.sourceSentence ? [e.sourceSentence] : [], similar: [],

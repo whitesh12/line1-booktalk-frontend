@@ -89,8 +89,9 @@ export function AnimWord({ text, motion, mode = 'hover' }: { text: string; motio
   );
 }
 
-const TAG_CLASS: Record<WordType, string> = { 의태어: 'tag-mimetic', 의성어: 'tag-sound', '관용 표현': 'tag-idiom', 감탄사: 'tag-interjection', '감정 표현': 'tag-interjection' };
-export function TypeTag({ type, style }: { type: WordType; style?: React.CSSProperties }) {
+const TAG_CLASS: Record<WordType, string> = { 의태어: 'tag-mimetic', 의성어: 'tag-sound', '관용 표현': 'tag-idiom' };
+export function TypeTag({ type, style }: { type: WordType | null; style?: React.CSSProperties }) {
+  if (!type || !TAG_CLASS[type]) return null; // 모르는 종류는 태그를 보여 주지 않는다
   return <span className={`tag ${TAG_CLASS[type]}`} style={style}>{type}</span>;
 }
 

@@ -1,4 +1,5 @@
-export type WordType = '의태어' | '의성어' | '관용 표현' | '감탄사' | '감정 표현';
+/** 단어 종류는 3가지. 서버가 모르는 종류를 주면 null (태그를 보여 주지 않음) */
+export type WordType = '의태어' | '의성어' | '관용 표현';
 export type Motion =
   | 'beat' | 'drop' | 'sob' | 'twinkle' | 'hop' | 'tiptoe' | 'roll'
   | 'splash' | 'crawl' | 'nod' | 'wave' | 'gulp' | 'struggle' | 'heave' | 'widen' | null;
@@ -7,7 +8,7 @@ export interface Similar { text: string; feel: string; when: string; sample?: st
 export interface Word {
   id: string;
   text: string;
-  type: WordType;
+  type: WordType | null;
   motion: Motion;
   meaning: string;
   vi: string;
@@ -184,7 +185,7 @@ export const WORDS: Record<string, Word> = {
     image: img('adeung.png'),
   },
   yeongcha: {
-    id: 'yeongcha', text: '영차', type: '감탄사', motion: 'heave',
+    id: 'yeongcha', text: '영차', type: '의성어', motion: 'heave',
     meaning: '여럿이 힘을 모을 때 내는 소리', vi: 'Hò dô ta',
     nuance: '함께 힘을 줄 때 박자를 맞추며 외쳐요.', nuanceVi: 'Tiếng hô khi cùng dùng sức',
     usage: [{ label: '줄다리기', text: '다 같이 줄을 당겨요' }],
