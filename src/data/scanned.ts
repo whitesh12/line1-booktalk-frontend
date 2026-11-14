@@ -23,6 +23,9 @@ interface ScanBook {
 }
 
 export const DEFAULT_SCAN_TITLE = '내가 찍은 그림책';
+
+/** 단어 목록에 보여 줄 표현인지 (감정 표현은 흉내말 학습 대상이 아니라서 빼기로 함) */
+export const isLearnable = (e: { type: string }) => e.type !== 'EMOTION';
 export const isScanBook = (id?: string | null) => !!id && (id === 'scan' || id.startsWith('scan-'));
 const LIST_KEY = 'booktalk.scans';
 const OLD_KEY = 'booktalk.scan'; // 예전에는 마지막 1권만 저장했다
@@ -118,7 +121,7 @@ function applyAll() {
     const ids: Record<string, string> = {};
     const trs: Record<string, { language: string; text: string }> = {};
     const scenes: Record<string, string> = {};
-    const wordIds = scan.expressions.map((e) => {
+    const wordIds = scan.expressions.filter(isLearnable).map((e) => {
       const local = Object.values(WORDS).find((w) => w.text === e.text && !w.id.startsWith('exp_'));
       // 번역은 단어 카드에 넣지 않고 '언어와 함께' 따로 기억한다 → 설정 언어와 같을 때만 보여 준다.
       const word: Word = local ?? {

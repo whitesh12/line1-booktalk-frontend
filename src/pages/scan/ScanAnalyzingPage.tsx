@@ -3,7 +3,7 @@ import { useNavigate, useSearchParams } from 'react-router-dom';
 import { GoLink, useGo } from '../../lib/nav';
 import { Header, Icon, TabBar } from '../../components/ui';
 import { ApiError, USE_MOCK, analyzePhoto, isTransientAiError, setChildLanguage, withChild } from '../../api/client';
-import { peekPendingPhoto, saveScan, setPendingPhoto } from '../../data/scanned';
+import { isLearnable, peekPendingPhoto, saveScan, setPendingPhoto } from '../../data/scanned';
 import { PHOTO_TOO_LARGE } from '../../lib/photo';
 import type { Profile } from '../../store/profile';
 
@@ -45,9 +45,11 @@ export function ScanAnalyzingPage({ profile, onSave }: { profile: Profile; onSav
       .then((r) => {
         if (ctrl.signal.aborted) return;
         // 분석은 됐는데 배울 표현이 없음 → '실패'가 아니라 다른 페이지를 안내하는 화면으로
-        if (r.expressions.length === 0) { setPendingPhoto(null); nav('/scan/empty?reason=no-expressions', { replace: true }); return; }
+        // 감정 표현은 단어 목록에 넣지 않는다. 남는 표현이 없으면 '배울 표현이 없어요' 화면으로
+        const learnable = r.expressions.filter(isLearnable);
+        if (learnable.length === 0) { setPendingPhoto(null); nav('/scan/empty?reason=no-expressions', { replace: true }); return; }
         setPendingPhoto(null);
-        const bookId = saveScan(r); // 찍을 때마다 새 책으로 저장
+        const bookId = saveScan({ ...r, expressions: learnable }); // 찍을 때마다 새 책으로 저장
         go(`/books/${bookId}`);
       })
       .catch((e) => {
