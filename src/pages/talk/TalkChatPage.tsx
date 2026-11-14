@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { useBlocker, useSearchParams } from 'react-router-dom';
-import { Header, Icon, KidMessage, TabBar, toast } from '../../components/ui';
+import { Header, Icon, KidMessage, TabBar } from '../../components/ui';
+import { useVoiceInput } from '../../lib/useVoiceInput';
 import type { Word } from '../../data/content';
 import { isIntentionalNav, useGo } from '../../lib/nav';
 import { ApiError, MAX_TURNS, USE_MOCK, childScript, openingLine, sendToChild, talkFeedbackTips, withChild } from '../../api/client';
@@ -57,6 +58,8 @@ export function TalkChatPage({ profile, onSave }: { profile: Profile; onSave: (p
   const done = mode === 'live' ? liveDone : turn >= MAX_TURNS;
   const end = useRef<HTMLDivElement>(null);
   const stem = w.text.split(' ')[0];
+  // 마이크로 입력: 말한 내용을 입력칸에 넣는다 (보내기는 직접 누른다)
+  const voice = useVoiceInput((said) => setText((prev) => (prev.trim() ? `${prev.trim()} ${said}` : said)));
 
   useEffect(() => { end.current?.scrollIntoView({ behavior: 'smooth' }); }, [msgs, waiting]);
 
@@ -247,7 +250,13 @@ export function TalkChatPage({ profile, onSave }: { profile: Profile; onSave: (p
         <form className="composer" onSubmit={(e) => { e.preventDefault(); send(); }}>
           <input id="talk-input" aria-label={retry ? '답변 다시 입력' : '답변 입력'} placeholder={waiting ? '답을 기다리는 중...' : retry ? '다시 답해 보세요' : '여기에 답해 보세요'}
             value={text} disabled={waiting} onChange={(e) => setText(e.target.value)} />
-          {!waiting && !retry && <button type="button" className="round mic" aria-label="음성 입력 (준비 중)" onClick={() => toast('음성 입력은 준비 중이에요. 글로 입력해 주세요.')}>{Icon.mic()}</button>}
+          {!waiting && !retry && (
+            <button type="button" className={`round mic${voice.state === 'recording' ? ' mic-rec' : ''}`} onClick={voice.toggle}
+              disabled={voice.state === 'transcribing'} aria-pressed={voice.state === 'recording'}
+              aria-label={voice.state === 'recording' ? '녹음 멈추고 글로 바꾸기' : voice.state === 'transcribing' ? '글로 바꾸는 중' : '말로 입력'}>
+              {voice.state === 'transcribing' ? <span className="typing" style={{ transform: 'scale(.6)' }}><i /><i /><i /></span> : Icon.mic()}
+            </button>
+          )}
           <button type="submit" className="round send" aria-label="보내기" disabled={waiting}>{Icon.arrow()}</button>
         </form>
       )}

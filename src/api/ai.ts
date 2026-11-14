@@ -7,6 +7,7 @@ import { BOOKS, WORDS } from '../data/content';
 import { isScanBook, serverVocabId, setDemoVocab } from '../data/scanned';
 import { loadProfile } from '../store/profile';
 import { recordLearning, type Stage } from '../store/learning';
+import { audioExt } from '../lib/recorder';
 
 /* ───────────── 학습 기록 (이 기기 + POST /children/{id}/learning-events) ───────────── */
 
@@ -234,4 +235,24 @@ export async function fetchRecentVocabulary(limit = 10): Promise<RecentVocab[]> 
   const childId = loadProfile().childId;
   if (USE_MOCK || !hasToken() || !childId) return [];
   return request<RecentVocab[]>(`/children/${childId}/recent-vocabulary?limit=${limit}`);
+}
+
+/* ───────────── 음성 인식 (POST /speech/transcriptions) ───────────── */
+
+/** 녹음한 말을 글자로 바꾼다. multipart: audio(녹음 파일), language, childId */
+export async function transcribe(audio: Blob): Promise<string> {
+  const childId = loadProfile().childId;
+  if (USE_MOCK || !hasToken() || !childId) throw new ApiError(401, 'NOT_READY', '말로 입력하려면 서버 연결이 필요해요. 잠시 후 다시 시도해 주세요.');
+  const form = new FormData();
+  form.append('audio', audio, `voice.${audioExt(audio.type)}`);
+  form.append('language', 'ko');
+  form.append('childId', childId);
+  let r = await request<{ id: string; status: string; text?: string | null }>('/speech/transcriptions', { method: 'POST', body: form });
+  // 바로 끝나지 않으면 잠깐씩 다시 확인한다 (최대 약 15초)
+  for (let i = 0; i < 15 && r.status !== 'COMPLETED' && r.status !== 'FAILED'; i++) {
+    await new Promise((res) => setTimeout(res, 1000));
+    r = await request(`/speech/transcriptions/${r.id}`);
+  }
+  if (r.status !== 'COMPLETED') throw new ApiError(502, 'TRANSCRIPTION_FAILED', '말을 알아듣지 못했어요. 다시 말해 주세요.');
+  return (r.text ?? '').trim();
 }

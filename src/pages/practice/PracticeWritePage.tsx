@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
-import { Header, Icon, TabBar, toast } from '../../components/ui';
+import { Header, Icon, TabBar } from '../../components/ui';
+import { useVoiceInput } from '../../lib/useVoiceInput';
 import { useGo } from '../../lib/nav';
 import { LOCAL_CSS, readDraft, setDraft, usePracticeWord } from './shared';
 
@@ -10,6 +11,7 @@ export function PracticeWritePage() {
   const go = useGo();
   const [text, setText] = useState(() => readDraft(w.id));
   const tooLong = text.trim().length > MAX_SENTENCE;
+  const voice = useVoiceInput((said) => setText((prev) => (prev.trim() ? `${prev.trim()} ${said}` : said)));
   useEffect(() => setDraft(w.id, null), [w.id]);
   const josa = /[가-힣]$/.test(w.text) && (w.text.charCodeAt(w.text.length - 1) - 0xac00) % 28 ? '을' : '를';
   return (
@@ -28,7 +30,11 @@ export function PracticeWritePage() {
           <textarea id="sentence" className="textarea" style={{ height: 170 }} placeholder="여기에 직접 문장을 입력해 보세요" value={text} onChange={(e) => setText(e.target.value)} />
           {tooLong && <span role="alert" style={{ fontSize: 13, color: 'var(--coral)' }}>문장은 {MAX_SENTENCE}자까지 쓸 수 있어요. (지금 {text.trim().length}자)</span>}
         </div>
-        <button type="button" className="btn btn-soft" onClick={() => toast('음성 입력은 준비 중이에요. 글로 입력해 주세요.')}>{Icon.mic(18)}마이크로 입력</button>
+        {/* 마이크로 입력: 누르면 녹음, 다시 누르면 글자로 바꿔 문장 칸에 넣는다 */}
+        <button type="button" className={`btn btn-soft${voice.state === 'recording' ? ' mic-rec' : ''}`} onClick={voice.toggle}
+          disabled={voice.state === 'transcribing'} aria-pressed={voice.state === 'recording'}>
+          {Icon.mic(18)}{voice.state === 'recording' ? '듣고 있어요 · 다 말하면 누르세요' : voice.state === 'transcribing' ? '글로 바꾸는 중…' : '마이크로 입력'}
+        </button>
       </div>
       <div className="bottom-bar">
         <button className="btn btn-primary" onClick={() => (text.trim() && !tooLong ? go(`/words/${w.id}/practice/reviewing${qs}`, { state: { sentence: text } }) : document.getElementById('sentence')?.focus())}>완료</button>
