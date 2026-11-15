@@ -312,6 +312,8 @@ export const BOOKS: Book[] = [
   },
 ];
 
+export const LOCAL_ONLY = new Set(['kkalkkal', 'bogeul', 'deoldeol', 'kung', 'neurit', 'hwolhwol', 'binggeul', 'ssaeng']);
+
 export const bookById = (id?: string) => BOOKS.find((b) => b.id === id);
 export const sceneFor = (word: Word, book?: Book) =>
   book?.scenes[word.id] ?? word.examples[0];

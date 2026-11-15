@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { BOOKS, WORDS, type Book, type Word, type WordType } from './content';
+import { BOOKS, LOCAL_ONLY, WORDS, type Book, type Word, type WordType } from './content';
 import { motionFor } from './motion';
 
 /** GET /books/pages/{pageId}/analysis 의 expressions 항목 */
@@ -76,9 +76,12 @@ const urlBook = () => new URLSearchParams(location.search).get('book');
  */
 export function serverVocabId(wordId: string, bookId = urlBook()): string | undefined {
   if (isScanBook(bookId)) return scanIds[bookId!]?.[wordId];
+  if (LOCAL_ONLY.has(wordId)) return undefined;
   if (bookId && demoIds[bookId]?.[wordId]) return demoIds[bookId][wordId];
   return scans.map((s) => scanIds[s.id]?.[wordId]).find(Boolean) ?? Object.values(demoIds).find((m) => m[wordId])?.[wordId];
 }
+
+export const offlineWord = (wordId: string) => LOCAL_ONLY.has(wordId) && !serverVocabId(wordId);
 
 /** 사진 분석에서 서버가 준 단어 번역 (언어 포함). 찍은 책 화면이면 그 책 것, 아니면 최근에 찍은 책 것 */
 export function scanTranslation(wordId: string, bookId = urlBook()) {

@@ -8,7 +8,7 @@ import { isIntentionalNav, useGo } from '../../lib/nav';
 import { ApiError, MAX_TURNS, USE_MOCK, childScript, escapeRe, uuid, openingLine, sendToChild, talkFeedbackTips, withChild } from '../../api/client';
 import { finishTalk, loadDemoVocab, sendTalk, startTalk, trackLearning, type TalkSession, type TalkTurn } from '../../api/ai';
 import { recordLearning } from '../../store/learning';
-import { serverVocabId } from '../../data/scanned';
+import { offlineWord, serverVocabId } from '../../data/scanned';
 import { fixHeard } from '../../lib/heard';
 import type { Profile } from '../../store/profile';
 import { useTalk } from './shared';
@@ -45,7 +45,7 @@ export function TalkChatPage({ profile, onSave }: { profile: Profile; onSave: (p
   const go = useGo();
   const demo = useSearchParams()[0].get('demo');
   // 서버 모드에서는 AI 와 실제로 대화한다. (화면 미리보기 ?demo= 와 서버 미사용 모드만 연습용 대화)
-  const wantLive = !demo && !USE_MOCK;
+  const wantLive = !demo && !USE_MOCK && !offlineWord(w.id);
   const [mode, setMode] = useState<'connecting' | 'live' | 'mock'>(wantLive ? 'connecting' : 'mock');
   const session = useRef<string | null>(null);
   const [notice, setNotice] = useState<string | null>(null);

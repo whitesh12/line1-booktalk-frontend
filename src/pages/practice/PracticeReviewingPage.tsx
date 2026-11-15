@@ -1,9 +1,9 @@
 import { useEffect, useState } from 'react';
 import { Navigate, useLocation, useNavigate } from 'react-router-dom';
 import { Header, TabBar } from '../../components/ui';
-import { ApiError, USE_MOCK, checkSentence, withChild } from '../../api/client';
+import { ApiError, USE_MOCK, checkSentence, mockSentenceFeedback, withChild } from '../../api/client';
 import { loadDemoVocab, trackLearning } from '../../api/ai';
-import { serverVocabId } from '../../data/scanned';
+import { offlineWord, serverVocabId } from '../../data/scanned';
 import type { Profile } from '../../store/profile';
 import { DEMO_SENTENCE, LOCAL_CSS, setDraft, sparkPath, usePracticeWord } from './shared';
 
@@ -23,6 +23,8 @@ export function PracticeReviewingPage({ profile, onSave }: { profile: Profile; o
     // 서버를 쓰는 모드: 서버(AI) 판정만 쓴다. 단어의 서버 id 를 아직 모르면 시연용 책 단어를 다시 불러와 본다.
     const run = USE_MOCK
       ? checkSentence(w, sentence)
+      : offlineWord(w.id)
+      ? new Promise<ReturnType<typeof mockSentenceFeedback>>((r) => setTimeout(() => r(mockSentenceFeedback(w, sentence)), 1200))
       : withChild(profile, (childId) => { if (alive) onSave({ ...profile, childId }); }, async (childId) => {
         let vocabularyId = serverVocabId(w.id);
         if (!vocabularyId) { await loadDemoVocab(); vocabularyId = serverVocabId(w.id); }
