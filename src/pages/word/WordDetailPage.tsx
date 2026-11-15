@@ -8,6 +8,7 @@ import { currentLang, detailRowTr, langOf, meaningTr, nuanceTr } from '../../dat
 import { isScanBook, serverVocabId, useVocabVersion } from '../../data/scanned';
 import { USE_MOCK, hasToken } from '../../api/client';
 import { cachedVocabulary, fetchVocabulary, trackLearning, type VocabDetail } from '../../api/ai';
+import { SayItCard } from './SayItCard';
 
 function Bold({ text, word }: { text: string; word: string }) {
   const stem = word.split(' ')[0];
@@ -77,6 +78,7 @@ export function WordDetailPage() {
     ...(ai.parentTips?.length ? [{ title: '아이에게 이렇게 설명해요', items: ai.parentTips.map((text) => ({ text })) }] : []),
     ...(ai.practiceExample ? [{ title: '상황이 생길 때 말해 줘요', items: [{ text: `“${ai.practiceExample}”`, boxed: true }] }] : []),
   ] : guideFor(w);
+  const practiceTo = `/words/${w.id}/practice${book ? `?book=${book.id}` : ''}`;
   const sectionTitle = { margin: 0, fontSize: 14, fontWeight: 700, color: 'var(--primary)' } as const;
   const rows = [
     { text: w.text, feel: extra.feel ?? w.nuance.split('.')[0], vi: rowTr.feel, when: w.usage[0]?.label ?? '' },
@@ -95,6 +97,7 @@ export function WordDetailPage() {
             {Icon.speaker(20)}{wordLoading ? '불러오는 중…' : '발음 듣기'}
           </button>
         </div>
+        {!USE_MOCK && <SayItCard text={w.text} practiceTo={practiceTo} />}
 
         <section className="card" style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
@@ -179,7 +182,7 @@ export function WordDetailPage() {
         ))}
       </div>
       <div className="bottom-bar sticky" style={{ background: '#fff', borderTop: '1px solid var(--border)' }}>
-        <GoLink to={`/words/${w.id}/practice${book ? `?book=${book.id}` : ''}`} className="btn btn-primary">{Icon.pencil()}문장 연습</GoLink>
+        <GoLink to={practiceTo} className="btn btn-primary">{Icon.pencil()}문장 연습</GoLink>
       </div>
       <TabBar />
     </div>
