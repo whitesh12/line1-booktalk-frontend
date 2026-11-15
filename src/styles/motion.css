@@ -20,6 +20,15 @@
 /* 눈이 휘둥그레지다: 글자가 차례로 커졌다 돌아온다 (놀라서 눈이 커지는 느낌) */
 .mw-widen.loop > span, :is(a, button):is(:hover, :active, :focus-visible) .mw-widen.hover > span { animation: mwWiden 2.2s ease-in-out infinite; }
 
+.mw-shiver.loop > span, :is(a, button):is(:hover, :active, :focus-visible) .mw-shiver.hover > span { animation: mwShiver .2s linear infinite; }
+.mw-fly.loop > span, :is(a, button):is(:hover, :active, :focus-visible) .mw-fly.hover > span { animation: mwFly 2.4s ease-in-out infinite; }
+.mw-spin.loop > span, :is(a, button):is(:hover, :active, :focus-visible) .mw-spin.hover > span { animation: mwSpin 2.4s cubic-bezier(.45, 0, .3, 1) infinite; }
+.mw-boom.loop, :is(a, button):is(:hover, :active, :focus-visible) .mw-boom.hover { animation: mwBoom 1.9s ease-out infinite; }
+.mw-laugh.loop > span, :is(a, button):is(:hover, :active, :focus-visible) .mw-laugh.hover > span { animation: mwLaugh .62s ease-in-out infinite; }
+.mw-dash.loop, :is(a, button):is(:hover, :active, :focus-visible) .mw-dash.hover { animation: mwDash 2.3s cubic-bezier(.2, .8, .2, 1) infinite; }
+.mw-bubble.loop > span, :is(a, button):is(:hover, :active, :focus-visible) .mw-bubble.hover > span { animation: mwBubble 2s ease-in-out infinite; }
+.mw-slow.loop > span, :is(a, button):is(:hover, :active, :focus-visible) .mw-slow.hover > span { animation: mwSlow 3.6s ease-in-out infinite; }
+
 @keyframes mwBeat { 0%, 45%, 100% { transform: scale(1); } 12% { transform: scale(1.13); } 24% { transform: scale(1.03); } 33% { transform: scale(1.15); } }
 @keyframes mwTw { 0%, 100% { opacity: 1; text-shadow: 0 0 .25em #F7C948; } 50% { opacity: .35; text-shadow: none; } }
 @keyframes mwDrop { 0% { transform: translateY(-1em); opacity: 0; } 35% { transform: translateY(0); opacity: 1; } 45% { transform: translateY(.1em); } 55%, 100% { transform: translateY(0); } }
@@ -36,6 +45,15 @@
 @keyframes mwStruggle { 0%, 100% { transform: translateX(0) rotate(0); } 25% { transform: translateX(-.05em) rotate(-4deg); } 75% { transform: translateX(.05em) rotate(4deg); } }
 @keyframes mwWiden { 0%, 45%, 100% { transform: none; } 12% { transform: scale(1.16) translateY(-.05em); } 24% { transform: scale(.98); } 32% { transform: scale(1.04); } }
 @keyframes mwHeave { 0%, 60%, 100% { transform: translateY(0) scale(1); } 30% { transform: translateY(-.18em) scale(1.06); } }
+
+@keyframes mwShiver { 0%, 100% { transform: translateX(0) rotate(0); } 25% { transform: translateX(-.035em) rotate(-2deg); } 75% { transform: translateX(.035em) rotate(2deg); } }
+@keyframes mwFly { 0%, 100% { transform: translateY(0) rotate(0); } 30% { transform: translateY(-.38em) rotate(-7deg); } 60% { transform: translateY(-.16em) rotate(6deg); } }
+@keyframes mwSpin { 0%, 20% { transform: rotate(0); } 70%, 100% { transform: rotate(360deg); } }
+@keyframes mwBoom { 0% { transform: translateY(-.7em) scale(.9); opacity: 0; } 16% { transform: translateY(0) scale(1.18, .82); opacity: 1; } 24% { transform: scale(.96, 1.05); } 31% { transform: translateX(-.05em); } 37% { transform: translateX(.05em); } 43% { transform: translateX(-.02em); } 50%, 100% { transform: none; opacity: 1; } }
+@keyframes mwLaugh { 0%, 100% { transform: translateY(0) rotate(0); } 30% { transform: translateY(-.16em) rotate(-6deg); } 60% { transform: translateY(-.03em) rotate(5deg); } }
+@keyframes mwDash { 0% { transform: translateX(-1.6em) skewX(-20deg); opacity: 0; } 28% { transform: translateX(.08em) skewX(-6deg); opacity: 1; } 38% { transform: none; } 82% { transform: none; opacity: 1; } 100% { transform: translateX(1.4em) skewX(-20deg); opacity: 0; } }
+@keyframes mwBubble { 0%, 100% { transform: translateY(0) scale(1); } 40% { transform: translateY(-.24em) scale(1.14); } 58% { transform: translateY(-.1em) scale(.94); } }
+@keyframes mwSlow { 0%, 100% { transform: none; } 50% { transform: translateY(.06em) scale(1.12, .9); } }
 
 @media (prefers-reduced-motion: reduce) {
   .mw, .mw > span, .mw::after { animation: none !important; opacity: 1 !important; }

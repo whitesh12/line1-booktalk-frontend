@@ -2,7 +2,8 @@
 export type WordType = '의태어' | '의성어' | '관용 표현' | '감탄사';
 export type Motion =
   | 'beat' | 'drop' | 'sob' | 'twinkle' | 'hop' | 'tiptoe' | 'roll'
-  | 'splash' | 'crawl' | 'nod' | 'wave' | 'gulp' | 'struggle' | 'heave' | 'widen' | null;
+  | 'splash' | 'crawl' | 'nod' | 'wave' | 'gulp' | 'struggle' | 'heave' | 'widen'
+  | 'shiver' | 'fly' | 'spin' | 'boom' | 'laugh' | 'dash' | 'bubble' | 'slow' | null;
 
 export interface Similar { text: string; feel: string; when: string; sample?: string; }
 export interface Word {
