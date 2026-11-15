@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import { BOOKS, WORDS, type Book, type Word, type WordType } from './content';
+import { motionFor } from './motion';
 
 /** GET /books/pages/{pageId}/analysis 의 expressions 항목 */
 export interface ScanExpression {
@@ -127,7 +128,7 @@ function applyAll() {
       // 번역은 단어 카드에 넣지 않고 '언어와 함께' 따로 기억한다 → 설정 언어와 같을 때만 보여 준다.
       const word: Word = local ?? {
         // 모르는 종류면 태그를 숨기고(의태어로 잘못 보이지 않게), 처음 보는 단어도 움직임이 보이게
-        id: e.id, text: e.text, type: TYPE[e.type] ?? null, motion: 'wave',
+        id: e.id, text: e.text, type: TYPE[e.type] ?? null, motion: motionFor(e.text, e.definition ?? ''),
         meaning: e.definition ?? '', vi: '',
         nuance: e.definition ?? '', nuanceVi: '', usage: [],
         examples: e.sourceSentence ? [e.sourceSentence] : [], similar: [],
