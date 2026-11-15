@@ -9,6 +9,7 @@ import { ApiError, MAX_TURNS, USE_MOCK, childScript, escapeRe, uuid, openingLine
 import { finishTalk, loadDemoVocab, sendTalk, startTalk, trackLearning, type TalkSession, type TalkTurn } from '../../api/ai';
 import { recordLearning } from '../../store/learning';
 import { serverVocabId } from '../../data/scanned';
+import { fixHeard } from '../../lib/heard';
 import type { Profile } from '../../store/profile';
 import { useTalk } from './shared';
 
@@ -62,7 +63,10 @@ export function TalkChatPage({ profile, onSave }: { profile: Profile; onSave: (p
   const end = useRef<HTMLDivElement>(null);
   const stem = w.text.split(' ')[0];
   // 마이크로 입력: 말한 내용을 입력칸에 넣는다 (보내기는 직접 누른다)
-  const voice = useVoiceInput((said) => setText((prev) => (prev.trim() ? `${prev.trim()} ${said}` : said)), w.text);
+  const voice = useVoiceInput((said) => {
+    const { text: fixed } = fixHeard(said, w.text);
+    setText((prev) => (prev.trim() ? `${prev.trim()} ${fixed}` : fixed));
+  }, w.text);
 
   useEffect(() => { end.current?.scrollIntoView({ behavior: 'smooth' }); }, [msgs, waiting]);
 
@@ -164,7 +168,7 @@ export function TalkChatPage({ profile, onSave }: { profile: Profile; onSave: (p
 
   async function send() {
     const t = text.trim();
-    if (waiting) return;
+    if (waiting || voice.state !== 'idle') return;
     if (!t) { document.getElementById('talk-input')?.focus(); return; }
     setText('');
     setNotice(null);
@@ -271,7 +275,7 @@ export function TalkChatPage({ profile, onSave }: { profile: Profile; onSave: (p
               {voice.state === 'transcribing' ? <span className="typing" style={{ transform: 'scale(.6)' }}><i /><i /><i /></span> : Icon.mic()}
             </button>
           )}
-          <button type="submit" className="round send" aria-label="보내기" disabled={waiting}>{Icon.arrow()}</button>
+          <button type="submit" className="round send" aria-label="보내기" disabled={waiting || voice.state !== 'idle'}>{Icon.arrow()}</button>
         </form>
       )}
       <TabBar onLeave={confirmLeave} />

@@ -3,6 +3,7 @@ import { useLocation } from 'react-router-dom';
 import { Header, Icon, LevelBars, TabBar, josa, ro } from '../../components/ui';
 import { formatElapsed, useVoiceInput } from '../../lib/useVoiceInput';
 import { useGo } from '../../lib/nav';
+import { fixHeard } from '../../lib/heard';
 import { LOCAL_CSS, readDraft, setDraft, usePracticeWord } from './shared';
 
 const MAX_SENTENCE = 100; // 서버 문장 연습 제한
@@ -15,10 +16,14 @@ export function PracticeWritePage() {
   const loc = useLocation();
   const retryVoice = !!(loc.state as { retryVoice?: boolean } | null)?.retryVoice; // 피드백에서 '다시 말하기'로 왔음
   const [heard, setHeard] = useState<string | null>(null); // 마이크로 마지막에 알아들은 말
+  const [swapped, setSwapped] = useState<string | null>(null);
   const voice = useVoiceInput((said) => {
-    setHeard(said);
-    setText((prev) => (prev.trim() ? `${prev.trim()} ${said}` : said));
+    const { text: fixed, from } = fixHeard(said, w.text);
+    setHeard(fixed);
+    setSwapped(from && from.replace(/\s/g, '') !== w.text ? from : null);
+    setText((prev) => (prev.trim() ? `${prev.trim()} ${fixed}` : fixed));
   }, w.text);
+  const listening = voice.state !== 'idle';
   const stem = w.text.split(' ')[0];
   // 말로 입력했는데 목표 단어가 안 들어갔으면 (잘못 알아들었을 수 있음) 보내기 전에 알려 준다
   const voiceMissed = heard !== null && !text.includes(stem);
@@ -44,6 +49,9 @@ export function PracticeWritePage() {
               <span>고쳐 쓰거나 다시 말해 주세요. 흉내말은 또박또박, 천천히 말하면 더 잘 알아들어요.</span>
             </div>
           )}
+          {swapped && !voiceMissed && (
+            <span role="status" style={{ fontSize: 13, lineHeight: 1.5, color: 'var(--primary-dark)' }}>‘{swapped}’{ro(swapped)} 들려서 ‘{w.text}’{ro(w.text)} 바꿔 넣었어요. 다르게 말했다면 고쳐 주세요.</span>
+          )}
           {retryVoice && heard === null && !text && (
             <span role="status" style={{ fontSize: 13, color: 'var(--primary-dark)' }}>아래 마이크를 누르고 ‘{w.text}’{josa(w.text, '을', '를')} 넣어 다시 말해 주세요.</span>
           )}
@@ -63,7 +71,7 @@ export function PracticeWritePage() {
         </div>
       </div>
       <div className="bottom-bar">
-        <button className="btn btn-primary" onClick={() => (text.trim() && !tooLong ? go(`/words/${w.id}/practice/reviewing${qs}`, { state: { sentence: text, fromVoice: heard !== null } }) : document.getElementById('sentence')?.focus())}>완료</button>
+        <button className="btn btn-primary" disabled={listening} onClick={() => (listening ? undefined : text.trim() && !tooLong ? go(`/words/${w.id}/practice/reviewing${qs}`, { state: { sentence: text, fromVoice: heard !== null } }) : document.getElementById('sentence')?.focus())}>완료</button>
       </div>
       <TabBar />
     </div>
