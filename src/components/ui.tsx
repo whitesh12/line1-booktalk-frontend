@@ -75,7 +75,7 @@ export function TabBar({ onLeave }: { onLeave?: (leave: () => void) => void }) {
 }
 
 const NBSP = String.fromCharCode(0xa0);
-const STAGGER: Partial<Record<NonNullable<Motion>, number>> = { twinkle: 0.37, tiptoe: 0.25, sob: 0.2, widen: 0.07, shiver: 0.03, fly: 0.2, spin: 0.15, laugh: 0.08, bubble: 0.22, slow: 0.35 };
+const STAGGER: Partial<Record<NonNullable<Motion>, number>> = { twinkle: 0.37, tiptoe: 0.25, sob: 0.2, widen: 0.07, shiver: 0.03, fly: 0.2, spin: 0.15, laugh: 0.08, bubble: 0.22, slow: 0.35, dim: 0.3, knock: 0.18 };
 export function AnimWord({ text, motion, mode = 'hover', wrap = false }: { text: string; motion: Motion; mode?: 'loop' | 'hover' | 'none'; wrap?: boolean }) {
   if (!motion || mode === 'none') return <>{text}</>;
   // 긴 관용 표현은 띄어쓰기에서 줄을 바꿀 수 있게 어절마다 따로 움직인다 (한 줄로 두면 화면 밖으로 넘친다)

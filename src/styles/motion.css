@@ -29,6 +29,9 @@
 .mw-bubble.loop > span, :is(a, button):is(:hover, :active, :focus-visible) .mw-bubble.hover > span { animation: mwBubble 2s ease-in-out infinite; }
 .mw-slow.loop > span, :is(a, button):is(:hover, :active, :focus-visible) .mw-slow.hover > span { animation: mwSlow 3.6s ease-in-out infinite; }
 
+.mw-dim.loop > span, :is(a, button):is(:hover, :active, :focus-visible) .mw-dim.hover > span { animation: mwDim 2.6s ease-in-out infinite; }
+.mw-knock.loop > span, :is(a, button):is(:hover, :active, :focus-visible) .mw-knock.hover > span { transform-origin: 50% 100%; animation: mwKnock 1.2s ease-out infinite; }
+
 @keyframes mwBeat { 0%, 45%, 100% { transform: scale(1); } 12% { transform: scale(1.13); } 24% { transform: scale(1.03); } 33% { transform: scale(1.15); } }
 @keyframes mwTw { 0%, 100% { opacity: 1; text-shadow: 0 0 .25em #F7C948; } 50% { opacity: .35; text-shadow: none; } }
 @keyframes mwDrop { 0% { transform: translateY(-1em); opacity: 0; } 35% { transform: translateY(0); opacity: 1; } 45% { transform: translateY(.1em); } 55%, 100% { transform: translateY(0); } }
@@ -54,6 +57,9 @@
 @keyframes mwDash { 0% { transform: translateX(-1.6em) skewX(-20deg); opacity: 0; } 28% { transform: translateX(.08em) skewX(-6deg); opacity: 1; } 38% { transform: none; } 82% { transform: none; opacity: 1; } 100% { transform: translateX(1.4em) skewX(-20deg); opacity: 0; } }
 @keyframes mwBubble { 0%, 100% { transform: translateY(0) scale(1); } 40% { transform: translateY(-.24em) scale(1.14); } 58% { transform: translateY(-.1em) scale(.94); } }
 @keyframes mwSlow { 0%, 100% { transform: none; } 50% { transform: translateY(.06em) scale(1.12, .9); } }
+
+@keyframes mwDim { 0%, 100% { opacity: 1; filter: none; } 50% { opacity: .2; filter: blur(.03em); } }
+@keyframes mwKnock { 0%, 30%, 100% { transform: none; } 8% { transform: translateY(.12em) rotate(-5deg) scaleY(.9); } 16% { transform: translateY(-.04em); } }
 
 @media (prefers-reduced-motion: reduce) {
   .mw, .mw > span, .mw::after { animation: none !important; opacity: 1 !important; }
