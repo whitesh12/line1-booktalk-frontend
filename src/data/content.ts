@@ -102,7 +102,7 @@ export const WORDS: Record<string, Word> = {
     examples: ['아빠가 자니까 살금살금 걸어가자.', '고양이가 살금살금 다가와요.'],
     similar: [{ text: '슬금슬금', feel: '눈치를 보며 슬그머니', when: '몰래 피할 때' }],
     tip: '발끝으로 걷는 흉내를 내며 작은 목소리로 “살금살금” 말해 보세요.',
-    image: img('salgeum.png'),
+    image: img('salgeum.jpg'),
   },
   degul: {
     id: 'degul', text: '데굴데굴', type: '의태어', motion: 'roll',
@@ -112,7 +112,7 @@ export const WORDS: Record<string, Word> = {
     examples: ['공이 데굴데굴 굴러가네!', '이불 위에서 데굴데굴 굴러요.'],
     similar: [{ text: '대굴대굴', feel: '작고 가볍게 굴러요', when: '작은 물건' }],
     tip: '공이나 귤을 굴리면서 “데굴데굴” 말해 보세요.',
-    image: img('degul.png'),
+    image: img('degul.jpg'),
   },
   cheombeong: {
     id: 'cheombeong', text: '첨벙첨벙', type: '의성어', motion: 'splash',
@@ -122,7 +122,7 @@ export const WORDS: Record<string, Word> = {
     examples: ['웅덩이에서 첨벙첨벙 놀자!', '오리가 첨벙첨벙 헤엄쳐요.'],
     similar: [{ text: '찰방찰방', feel: '얕은 물을 가볍게', when: '작은 물놀이' }],
     tip: '목욕할 때 손으로 물을 치면서 “첨벙첨벙” 말해 보세요.',
-    image: img('cheombeong.png'),
+    image: img('cheombeong.jpg'),
   },
   eonggeum: {
     id: 'eonggeum', text: '엉금엉금', type: '의태어', motion: 'crawl',
@@ -132,7 +132,7 @@ export const WORDS: Record<string, Word> = {
     examples: ['거북이가 엉금엉금 기어가요.', '아기가 엉금엉금 기어 와요.'],
     similar: [{ text: '느릿느릿', feel: '그냥 느리게 움직여요', when: '기지 않을 때도' }],
     tip: '바닥에서 함께 기어가며 “엉금엉금” 말해 보세요.',
-    image: img('eonggeum.png'),
+    image: img('eonggeum.jpg'),
   },
   kkubeok: {
     id: 'kkubeok', text: '꾸벅꾸벅', type: '의태어', motion: 'nod',
@@ -142,7 +142,7 @@ export const WORDS: Record<string, Word> = {
     examples: ['강아지가 꾸벅꾸벅 졸아요.', '밥 먹다가 꾸벅꾸벅 졸고 있네.'],
     similar: [{ text: '끄덕끄덕', feel: '‘네’ 하고 고개를 움직여요', when: '대답할 때' }],
     tip: '눈을 반쯤 감고 고개를 천천히 숙이며 “꾸벅꾸벅” 흉내 내 보세요.',
-    image: img('kkubeok.png'),
+    image: img('kkubeok.jpg'),
   },
   gubul: {
     id: 'gubul', text: '구불구불', type: '의태어', motion: 'wave',
@@ -152,7 +152,7 @@ export const WORDS: Record<string, Word> = {
     examples: ['구불구불한 산길을 걸어요.'],
     similar: [{ text: '꼬불꼬불', feel: '더 작고 촘촘하게 굽어요', when: '라면·머리카락' }],
     tip: '손가락으로 공중에 구불구불한 길을 함께 그려 보세요.',
-    image: img('gubul.png'),
+    image: img('gubul.jpg'),
   },
   ggulkkeok: {
     id: 'ggulkkeok', text: '꿀꺽', type: '의성어', motion: 'gulp',
@@ -182,7 +182,7 @@ export const WORDS: Record<string, Word> = {
     examples: ['오누이가 바위를 아등바등 밀었어요.'],
     similar: [{ text: '끙끙', feel: '힘들어서 소리를 내요', when: '무거운 것을 들 때' }],
     tip: '무거운 걸 미는 흉내를 내며 “아등바등” 말해 보세요.',
-    image: img('adeung.png'),
+    image: img('adeung.jpg'),
   },
   yeongcha: {
     id: 'yeongcha', text: '영차', type: '감탄사', motion: 'heave',
