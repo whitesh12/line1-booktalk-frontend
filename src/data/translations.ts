@@ -75,6 +75,38 @@ const TR: Record<string, { zh: Tr; en: Tr }> = {
     zh: { meaning: '嘿哟（一起用力时的号子）', nuance: '大家一起用力时喊的口号' },
     en: { meaning: 'Heave-ho!', nuance: 'What everyone shouts together when pulling or lifting' },
   },
+  kkalkkal: {
+    zh: { meaning: '咯咯（大声笑）', nuance: '觉得很好玩，忍不住大声开心地笑' },
+    en: { meaning: 'Giggle, ha-ha (laughing out loud)', nuance: 'Laughing out loud because something is really fun' },
+  },
+  bogeul: {
+    zh: { meaning: '咕嘟咕嘟（水开的声音）', nuance: '锅里的汤轻轻沸腾的声音' },
+    en: { meaning: 'Bubble bubble (boiling)', nuance: 'The soft sound of soup bubbling in a pot' },
+  },
+  deoldeol: {
+    zh: { meaning: '冷得发抖', nuance: '因为冷或害怕身体发抖' },
+    en: { meaning: 'Shivering, trembling', nuance: 'Your body shaking because you are cold or scared' },
+  },
+  kung: {
+    zh: { meaning: '咚（重物落下的声音）', nuance: '重的东西掉到地上发出的响声' },
+    en: { meaning: 'Thud, boom', nuance: 'The loud sound of something heavy falling or hitting' },
+  },
+  neurit: {
+    zh: { meaning: '慢吞吞', nuance: '像乌龟、蜗牛一样慢慢地移动' },
+    en: { meaning: 'Slowly, sluggishly', nuance: 'Moving very slowly, like a turtle or a snail' },
+  },
+  hwolhwol: {
+    zh: { meaning: '展翅高飞', nuance: '鸟儿或蝴蝶轻轻地飞向高处' },
+    en: { meaning: 'Flying high and free', nuance: 'A bird or butterfly flying lightly up high' },
+  },
+  binggeul: {
+    zh: { meaning: '滴溜溜地转', nuance: '像陀螺、风车一样不停地转' },
+    en: { meaning: 'Spinning round and round', nuance: 'Turning again and again, like a top or pinwheel' },
+  },
+  ssaeng: {
+    zh: { meaning: '呼呼（风声），嗖嗖', nuance: '风吹得很猛，或者东西飞快地经过' },
+    en: { meaning: 'Whoosh', nuance: 'Wind blowing hard, or something passing by very fast' },
+  },
 };
 
 /** 두근두근 상세 화면의 '느낌'·비슷한 표현 번역 (DETAIL.feelVi, similarVi 와 같은 순서) */
